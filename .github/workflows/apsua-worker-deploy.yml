@@ -1,8 +1,9 @@
 name: Deploy apsuatur-prod Worker (manual only)
 
 # Builds the standalone Worker with the restored D1/R2 bindings and deploys it to
-# Cloudflare as apsuatur-prod (workers.dev only). It never touches DNS, custom domains,
-# the ChatGPT Sites project, D1/R2 contents or Worker secrets.
+# Cloudflare as apsuatur-prod. The site is served only on apsuatur.com (custom domain set in
+# the Cloudflare dashboard): the workers.dev address and preview URLs stay switched off.
+# It never touches DNS, custom domains, the ChatGPT Sites project, D1/R2 contents or Worker secrets.
 on:
   workflow_dispatch:
     inputs:
@@ -60,15 +61,17 @@ jobs:
           npm run build
           node scripts/check-self-hosted-build.mjs
 
-      - name: Refuse routes or custom domains in the deploy config
+      - name: Refuse routes; keep workers.dev and preview URLs off
         run: |
           node -e '
-            const c = require("./dist/server/wrangler.json");
+            const fs = require("fs"), file = "./dist/server/wrangler.json", c = require(file);
             if (c.route || (c.routes && c.routes.length)) { console.error("Deploy config contains routes; refusing"); process.exit(1); }
-            console.log("Deploy config: workers.dev only, no routes or custom domains");
+            c.workers_dev = false; c.preview_urls = false;
+            fs.writeFileSync(file, JSON.stringify(c, null, 2));
+            console.log("Deploy config: no routes, workers.dev and preview URLs disabled; apsuatur.com stays attached in the dashboard");
           '
 
-      - name: Deploy to Cloudflare (workers.dev only)
+      - name: Deploy to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
