@@ -223,7 +223,7 @@ function logoHTML(){return C.site.logo&&src(C.site.logo)?`<img class="logo-img" 
 function renderChrome(){
  $$('.logo').forEach(a=>{a.innerHTML=logoHTML();a.setAttribute('aria-label',C.site.name+' — на главную')});
  const s=C.site;
- $('#contacts').innerHTML=`<div class="wrap footer-compact"><div class="footer-main"><div class="footer-brand"><b>${esc(s.name)}</b><p>Экскурсии и трансфер по Абхазии</p></div><div class="footer-contact">${s.phone?`<a class="footer-phone" href="tel:${esc(s.phone.replace(/[^+0-9]/g,''))}">${esc(s.phone)}</a>`:''}${s.messenger&&s.messenger!==s.phone?`<span>${esc(s.messenger)}</span>`:''}${s.email?`<a href="mailto:${esc(s.email)}">${esc(s.email)}</a>`:''}</div><nav class="footer-links" aria-label="Полезные ссылки"><a href="#/reviews">Отзывы</a><a href="#/diary">Истории</a><a href="#/faq">Вопросы</a><a href="#/useful">Полезное</a></nav></div><div class="footer-bottom"><span>© ${new Date().getFullYear()} ${esc(s.name)}</span><div><a href="/assets/image-sources.txt" target="_blank" rel="noopener">Источники фото</a></div></div></div>`;
+ $('#contacts').innerHTML=`<div class="wrap footer-compact"><div class="footer-main"><div class="footer-brand"><b>${esc(s.name)}</b><p>Экскурсии и трансфер по Абхазии</p></div><div class="footer-contact">${s.phone?`<a class="footer-phone" href="tel:${esc(s.phone.replace(/[^+0-9]/g,''))}">${esc(s.phone)}</a>`:''}${s.messenger&&s.messenger!==s.phone?`<span>${esc(s.messenger)}</span>`:''}${s.email?`<a href="mailto:${esc(s.email)}">${esc(s.email)}</a>`:''}</div><nav class="footer-links" aria-label="Полезные ссылки"><a href="#/reviews">Отзывы</a><a href="#/diary">Истории</a><a href="#/faq">Вопросы</a><a href="#/useful">Полезное</a></nav></div><div class="footer-bottom"><span>© ${new Date().getFullYear()} ${esc(s.name)}</span><div></div></div></div>`;
  const it=$('#installTab');if(it)it.hidden=true;
  document.title=C.site.name;
  syncAcc();syncFav();
@@ -418,6 +418,7 @@ function mapSVG(){
 
 function mapBlock(){return `<div class="map-grid"><div><div class="map-box">${mapSVG()}</div>
   <div class="map-legend"><span>Маршрутов в районе:</span>${GRAD.map(([c,l])=>`<span><i style="background:${c}"></i>${l}</span>`).join('')}</div>
+  <p class="map-credit" style="margin:6px 0 0;font-size:12px;opacity:.6">Карта: bdijkstra, Wikimedia Commons, <a href="https://creativecommons.org/licenses/by-sa/3.0/nl/" target="_blank" rel="noopener">CC BY-SA 3.0 NL</a>, изменена.</p>
   <div class="dchips" role="group" aria-label="Районы">${DISTRICTS.map(d=>`<button type="button" class="chip" data-dist="${d.id}" aria-pressed="false">${esc(d.short)}<small>${distCount(d.id)||''}</small></button>`).join('')}</div></div>
   <div class="map-side" id="mapSide"></div></div>`}
 function renderMapSide(dist,pinK){
@@ -3784,6 +3785,6 @@ document.addEventListener('click',event=>{const button=event.target.closest?.('[
 SITE_CHANGELOG.push({version:'24.1',date:'2026-11-03',author:'Руслан',title:'Ссылки нового домена',description:'Превью сайта для мессенджеров и служебный адрес запросов маршрутов теперь используют apsuatur.com вместо прежнего адреса ChatGPT Sites.',type:'fix',priority:'normal'});
 SITE_CHANGELOG.push({version:'24.2',date:'2026-11-03',author:'Руслан',title:'Вход через Яндекс',description:'Рядом с Telegram появился вход через Яндекс. После авторизации турист возвращается на ту же страницу, получает защищённую серверную сессию и видит свои заявки. Если Яндекс подключён из уже открытого Telegram-профиля, способы входа ведут в один кабинет.',type:'feature',priority:'important'});
 SITE_CHANGELOG.push({version:'24.3',date:'2026-11-04',author:'Руслан',title:'Единое окно входа',description:'Telegram и Яндекс представлены равноправными кнопками. QR-код и дополнительные способы входа через Telegram раскрываются по нажатию. Убраны отдельные публичные ссылки входа для сотрудников и администратора; панель управления остаётся доступна в кабинете по правам аккаунта. Смена аккаунта использует выход текущего сервиса вместо устаревшей ссылки.',type:'improvement',priority:'normal'});
-SITE_CHANGELOG.push({version:'24.4',date:'2026-11-04',author:'Руслан',title:'Без ссылки «Администратору» в подвале',description:'Из подвала сайта убрана публичная ссылка «Администратору». Админка открывается по прямому адресу /#/admin и, как прежде, только после входа владельца или сотрудника.',type:'improvement',priority:'minor'});
+SITE_CHANGELOG.push({version:'24.4',date:'2026-11-04',author:'Руслан',title:'Подвал без служебных ссылок',description:'Из подвала сайта убраны ссылки «Администратору» и «Источники фото». Админка открывается по прямому адресу /#/admin и, как прежде, только после входа владельца или сотрудника. Обязательная подпись автора карты Абхазии (лицензия CC BY-SA) теперь стоит прямо под картой.',type:'improvement',priority:'minor'});
 hostedBoot();
 })();
