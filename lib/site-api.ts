@@ -376,7 +376,7 @@ async function roadRoute(url:URL,env:Env):Promise<Response>{
   const coordinates=ids.map(id=>routingPoints[id].join(',')).join(';');
   if(ids.length===1){const data={stops:ids,distanceKm:0,coordinates:[roadXY(routingPoints[from])],waypoints:[roadXY(routingPoints[from])],source:'OpenStreetMap / OSRM'};return json(data)}
   let result:any=null;for(const host of ['https://routing.openstreetmap.de/routed-car','https://router.project-osrm.org']){try{
-   const response=await fetch(host+'/route/v1/driving/'+coordinates+'?overview=full&geometries=geojson&steps=false&radiuses='+ids.map(()=>3000).join(';'),{signal:AbortSignal.timeout(10000),redirect:'manual',headers:{Accept:'application/json','User-Agent':'ApsuaTour/1.0 (+https://apsua-tour-design.rkviii.chatgpt.site)'}});
+   const response=await fetch(host+'/route/v1/driving/'+coordinates+'?overview=full&geometries=geojson&steps=false&radiuses='+ids.map(()=>3000).join(';'),{signal:AbortSignal.timeout(10000),redirect:'manual',headers:{Accept:'application/json','User-Agent':'ApsuaTour/1.0 (+https://apsuatur.com)'}});
    if(!response.ok){console.warn('Road routing upstream',host,response.status);continue}const candidate:any=await response.json();if(candidate.code==='Ok'){result=candidate;break}console.warn('Road routing response',host,candidate.code);
   }catch(error){console.warn('Road routing connection',host,String(error))}}
   if(!result&&env.ORS_API_KEY){try{
