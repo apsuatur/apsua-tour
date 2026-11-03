@@ -9,6 +9,12 @@ const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   "00000000-0000-4000-8000-000000000000";
 
 const { d1, r2 } = hostingConfig;
+// Standalone production is opt-in. The Sites build remains unchanged by default.
+const selfHosted = process.env.APSUA_SELF_HOSTED === "1";
+const selfHostedDatabaseId = process.env.APSUA_D1_DATABASE_ID || "";
+if (selfHosted && !/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(selfHostedDatabaseId)) {
+  throw new Error("APSUA_D1_DATABASE_ID must be the actual D1 database UUID");
+}
 
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
@@ -53,7 +59,7 @@ export default defineConfig(async ({ command }) => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
-    define: { __APSUA_BUILD_ID__: JSON.stringify(String(Date.now())) },
+    define: { __APSUA_BUILD_ID__: JSON.stringify(String(Date.now())), __APSUA_SELF_HOSTED__: JSON.stringify(selfHosted) },
     server: {
       ...(managedLinux
         ? { host: "0.0.0.0", allowedHosts: ["terminal.local"] }
@@ -71,6 +77,18 @@ export default defineConfig(async ({ command }) => {
         inspectorPort: false,
         config: {
           ...localBindingConfig,
+          ...(selfHosted ? {
+            name: process.env.APSUA_WORKER_NAME || "apsuatur-prod",
+            d1_databases: [{
+              binding: "DB",
+              database_name: process.env.APSUA_D1_DATABASE_NAME || "apsuatur-db",
+              database_id: selfHostedDatabaseId,
+            }],
+            r2_buckets: [{
+              binding: "BUCKET",
+              bucket_name: process.env.APSUA_R2_BUCKET_NAME || "apsuatur-media",
+            }],
+          } : {}),
           ...(command === "serve"
             ? {
                 services: [
