@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
+const source=readFileSync('public/user-app.js','utf8'),block=source.slice(source.indexOf('/* Personal notification inbox:'),source.indexOf("SITE_CHANGELOG.push({version:'23.1'"));
+const nodes=new Map(),requests=[];const node=()=>({style:{},dataset:{},hidden:false,isConnected:true,innerHTML:'',textContent:'',setAttribute(k,v){this[k]=v},addEventListener(){},showModal(){this.open=true},close(){this.open=false},remove(){this.isConnected=false},focus(){},getBoundingClientRect(){return {right:950,bottom:64}}});
+const account=node();account.parentElement={};account.before=bell=>nodes.set('#notificationBell',bell);nodes.set('#accBtn',account);
+const now=Date.now(),recent={id:'new',title:'Подтверждено',body:'Поездка',url:'/#/account',created:now,read:false},old={...recent,id:'old',created:now-2*86400000,read:true};
+const ctx=vm.createContext({console,URLSearchParams,Date,serverIdentity:{id:'alice'},pushConfig:null,pushRegistration:null,pushDeviceEnabled:false,document:{hidden:false,createElement:node,body:{append(){}},addEventListener(){}},window:{innerWidth:1000,innerHeight:800,addEventListener(){}},setInterval(){},syncAcc(){},V17_ICON:{bell:'<svg></svg>'},esc:s=>String(s),$:(s)=>nodes.get(s)||null,pushAvailable:()=>false,isIOS:()=>false,pushInstalled:()=>false,outsideDialogBounds:()=>false,api:async(path,options)=>{requests.push({path,options});if(path.endsWith('/read'))return {ok:true};return {items:path.includes('scope=archive')?[old]:[recent],unread:1,hasOlder:true,cutoff:now-86400000,snapshotAt:now,next:null}}});
+for(const key of ['[data-inbox-list]','[data-inbox-more]','[data-inbox-archive]','[data-inbox-old]','[data-inbox-status]','[data-inbox-permission]'])nodes.set(key,node());
+vm.runInContext(block+';globalThis.ui={openInbox,closeInbox,loadInbox,drawInbox,syncInboxBell,maybePromptInboxPermission,getDialog:()=>inboxDialog,showArchive:async()=>{inboxArchiveOpen=true;await loadInbox(false,true)},setUser:u=>{serverIdentity=u;syncInboxBell()}}',ctx);
+ctx.ui.openInbox();await new Promise(setImmediate);await new Promise(setImmediate);
+const dialog=ctx.ui.getDialog();assert.ok(dialog.open);assert.ok(dialog.innerHTML.includes('>Включить</button>'));for(const unwanted of ['>Обновить<','>Прочитано<','>Прочитать все<'])assert.ok(!dialog.innerHTML.includes(unwanted));assert.ok(requests.some(x=>x.path.endsWith('/read')),'Opening automatically persists read status');assert.ok(nodes.get('[data-inbox-list]').innerHTML.includes('Подтверждено'));assert.equal(nodes.get('[data-inbox-archive]').hidden,false);
+assert.match(dialog.innerHTML,/data-inbox-permission hidden/,'Permission card starts hidden and cannot flash before subscription check');
+assert.ok(nodes.get('[data-inbox-list]').innerHTML.includes('inbox-item-head'),'Title and time share one compact row');
+assert.ok(dialog.innerHTML.includes('>Включить</button>'),'Mobile permission action uses the compact label');
+await ctx.ui.showArchive();assert.ok(nodes.get('[data-inbox-old]').innerHTML.includes('Подтверждено'));assert.equal(nodes.get('[data-inbox-old]').hidden,false);
+ctx.ui.closeInbox();ctx.ui.openInbox();await new Promise(setImmediate);await new Promise(setImmediate);assert.ok(nodes.get('[data-inbox-list]').innerHTML.includes('Подтверждено'),'Reopening keeps read history');ctx.ui.setUser(null);assert.equal(ctx.ui.getDialog(),null,'Signing out closes private history');
+console.log('PASS: compact panel, explicit permission button, automatic reading, archive opening, reopening and logout privacy');

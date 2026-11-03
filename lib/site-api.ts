@@ -7,7 +7,8 @@ import seed from './site-seed.json';
 import transferRates from './transfer-rates.json';
 import { priceBooking } from './tour-pricing';
 import { telegramAuth, telegramConfig, telegramIdentity, telegramLogout, telegramAppAPI } from './telegram-auth';
-type Env={PAYMENT_WEBHOOK_SECRET?:string;DISPATCH_API_URL?:string;DISPATCH_API_TOKEN?:string;DISPATCH_WEBHOOK_SECRET?:string;APP_ADMIN_INVITE?:string;VAPID_PUBLIC_KEY?:string;VAPID_PRIVATE_JWK?:string;VAPID_SUBJECT?:string;DB:D1Database;BUCKET:R2Bucket;SITE_OWNER_EMAIL?:string;TEST_AUTH_INVITES?:string;DEMO_AUTH_INVITES?:string;TEST_AUTH_UNTIL?:string;TELEGRAM_BOT_TOKEN?:string;TELEGRAM_WEBHOOK_SECRET?:string;TELEGRAM_BOT_USERNAME?:string;YANDEX_MAPS_KEY?:string;ORS_API_KEY?:string};
+import { ownerExport } from './owner-export';
+type Env={PAYMENT_WEBHOOK_SECRET?:string;DISPATCH_API_URL?:string;DISPATCH_API_TOKEN?:string;DISPATCH_WEBHOOK_SECRET?:string;APP_ADMIN_INVITE?:string;VAPID_PUBLIC_KEY?:string;VAPID_PRIVATE_JWK?:string;VAPID_SUBJECT?:string;DB:D1Database;BUCKET:R2Bucket;SITE_OWNER_EMAIL?:string;TEST_AUTH_INVITES?:string;DEMO_AUTH_INVITES?:string;TEST_AUTH_UNTIL?:string;TELEGRAM_BOT_TOKEN?:string;TELEGRAM_WEBHOOK_SECRET?:string;TELEGRAM_BOT_USERNAME?:string;YANDEX_MAPS_KEY?:string;ORS_API_KEY?:string;OWNER_EXPORT_ENABLED?:string;OWNER_EXPORT_TOKEN?:string};
 const json=(data:unknown,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const clean=(v:unknown,n=3000)=>String(v??'').trim().slice(0,n);
 const releaseUpdatedAt=1791505751266;
@@ -157,6 +158,7 @@ async function siteAPIInner(request:Request,env:Env):Promise<Response>{try{
 const knownVisitor=!!request.headers.get('cookie')?.match(/(?:^|; )apsua_visitor=[a-f0-9-]{36}(?:;|$)/);if(id||knownVisitor)await env.DB.prepare('INSERT OR IGNORE INTO views (story,visitor,day) VALUES (?,?,?)').bind(sid,id||visitorCookie,new Date().toISOString().slice(0,10)).run();const response=json({ok:true,counted:!!(id||knownVisitor)});response.headers.set('Set-Cookie','apsua_visitor='+visitorCookie+'; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=31536000');return response}
  const isOwner=(!testUser&&await admin(env,id,email))||(testUser&&testing?.role==='admin'),staffRole=tgUser?await telegramStaffRole(env,id):'',isAdmin=isOwner||staffRole==='admin',isEditor=testUser&&testing?.role==='editor'||staffRole==='editor',isDispatcher=staffRole==='dispatcher',isObserver=staffRole==='observer',canAccessAdmin=isAdmin||isEditor||isDispatcher||isObserver,canViewOrders=isAdmin||isDispatcher||isObserver,canManageOrders=isAdmin||isDispatcher;
  if(request.method!=='GET'){if(request.headers.get('origin')!==url.origin)return json({error:'Недопустимый источник запроса'},403);if(!id)return json({error:'Войдите в аккаунт'},401)}
+ const exportResponse=await ownerExport(request,env,isOwner);if(exportResponse)return exportResponse;
  if(path.startsWith('/api/push/')||path.startsWith('/api/admin/push'))return await pushAPI(request,env,id,isAdmin);
  if(path==='/api/admin/staff'&&request.method==='GET'){
   if(!isOwner)return json({error:'Управлять сотрудниками может только владелец'},403);
