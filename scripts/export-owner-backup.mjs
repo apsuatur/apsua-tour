@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto';
-import {chmod,mkdir,rename,rm,writeFile} from 'node:fs/promises';
+import {chmod,mkdir,rename,writeFile} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 
 const origin=String(process.env.APSUA_EXPORT_ORIGIN||'').replace(/\/$/,'');
@@ -62,7 +62,11 @@ async function listR2(){
 
 function r2Fingerprint(objects){return sha256(Buffer.from(JSON.stringify(objects.map(item=>({key:item.key,version:item.version,size:item.size,etag:item.etag,uploaded:item.uploaded,httpMetadata:item.httpMetadata,customMetadata:item.customMetadata,checksums:item.checksums,storageClass:item.storageClass})))))}
 
-await rm(output,{recursive:true,force:true});await mkdir(join(output,'r2','objects'),{recursive:true,mode:0o700});await chmod(output,0o700);
+// Never delete an existing directory: it may contain real files or an older backup.
+// EEXIST is intentional, pick a new APSUA_EXPORT_DIR for each run.
+await mkdir(output,{recursive:false,mode:0o700});
+await chmod(output,0o700);
+await mkdir(join(output,'r2','objects'),{recursive:true,mode:0o700});
 const d1=await stableD1();
 await writeFile(join(output,'d1-export.sql'),d1.sql,{mode:0o600});
 const before=await listR2(),r2=[];
