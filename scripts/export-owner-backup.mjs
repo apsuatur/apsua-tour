@@ -2,11 +2,18 @@ import {createHash} from 'node:crypto';
 import {chmod,mkdir,rename,writeFile} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 
-const origin=String(process.env.APSUA_EXPORT_ORIGIN||'').replace(/\/$/,'');
-const cookie=String(process.env.APSUA_EXPORT_COOKIE||'');
-const token=String(process.env.APSUA_EXPORT_TOKEN||'');
+let privateInput={};
+if(!process.env.APSUA_EXPORT_TOKEN){
+  let raw='';
+  for await(const chunk of process.stdin){raw+=chunk;if(/[\r\n]/.test(raw))break}
+  try{privateInput=JSON.parse(raw.trim()||'{}')}catch{throw new Error('Private input must be a JSON object.')}}
+const origin=String(privateInput.origin||process.env.APSUA_EXPORT_ORIGIN||'').replace(/\/$/,'');
+const cookie=String(privateInput.cookie||process.env.APSUA_EXPORT_COOKIE||'');
+const sitesAuthorization=String(privateInput.sitesAuthorization||'');
+const ownerToken=String(privateInput.ownerToken||'');
+const token=String(privateInput.exportToken||process.env.APSUA_EXPORT_TOKEN||'');
 const output=resolve(process.env.APSUA_EXPORT_DIR||'private-backup');
-if(!/^https:\/\//.test(origin)||!cookie||!token)throw new Error('Set APSUA_EXPORT_ORIGIN, APSUA_EXPORT_COOKIE and APSUA_EXPORT_TOKEN in the environment.');
+if(!/^https:\/\//.test(origin)||(!cookie&&(!sitesAuthorization||!ownerToken))||!token)throw new Error('Provide origin, owner authentication and exportToken through private stdin JSON.');
 
 const sha256=value=>createHash('sha256').update(value).digest('hex');
 const quote=value=>'"'+String(value).replaceAll('"','""')+'"';
@@ -19,7 +26,11 @@ const literal=cell=>{
 };
 
 async function call(action,data={}){
-  const response=await fetch(`${origin}/api/owner-export/${action}`,{method:'POST',headers:{Origin:origin,Cookie:cookie,'X-Apsua-Export-Token':token,'Content-Type':'application/json'},body:JSON.stringify(data),redirect:'error'});
+  const headers={Origin:origin,'X-Apsua-Export-Token':token,'Content-Type':'application/json'};
+  if(cookie)headers.Cookie=cookie;
+  if(sitesAuthorization)headers['OAI-Sites-Authorization']='Bearer '+sitesAuthorization;
+  if(ownerToken)headers['X-Apsua-Owner-Export-Token']=ownerToken;
+  const response=await fetch(`${origin}/api/owner-export/${action}`,{method:'POST',headers,body:JSON.stringify(data),redirect:'error'});
   if(!response.ok){let reason='HTTP '+response.status;try{reason=(await response.json()).error||reason}catch{}throw new Error(`${action}: ${reason}`)}
   return response;
 }
@@ -62,11 +73,7 @@ async function listR2(){
 
 function r2Fingerprint(objects){return sha256(Buffer.from(JSON.stringify(objects.map(item=>({key:item.key,version:item.version,size:item.size,etag:item.etag,uploaded:item.uploaded,httpMetadata:item.httpMetadata,customMetadata:item.customMetadata,checksums:item.checksums,storageClass:item.storageClass})))))}
 
-// Never delete an existing directory: it may contain real files or an older backup.
-// EEXIST is intentional, pick a new APSUA_EXPORT_DIR for each run.
-await mkdir(output,{recursive:false,mode:0o700});
-await chmod(output,0o700);
-await mkdir(join(output,'r2','objects'),{recursive:true,mode:0o700});
+await mkdir(output,{recursive:false,mode:0o700});await mkdir(join(output,'r2','objects'),{recursive:true,mode:0o700});await chmod(output,0o700);
 const d1=await stableD1();
 await writeFile(join(output,'d1-export.sql'),d1.sql,{mode:0o600});
 const before=await listR2(),r2=[];

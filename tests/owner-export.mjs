@@ -12,6 +12,7 @@ assert.equal(await ownerExport(new Request(origin+'/api/state'),env,true),null,'
 assert.equal((await ownerExport(request('/api/owner-export/status',{method:'GET'}),env,true)).status,405,'GET cannot export');
 assert.equal((await ownerExport(request('/api/owner-export/status'),{...env,OWNER_EXPORT_ENABLED:'0'},true)).status,404,'export is off by default');
 assert.equal((await ownerExport(request('/api/owner-export/status'),env,false)).status,403,'only the owner can export');
+{const automated={...env,OWNER_EXPORT_SITES_TOKEN:'sites-owner-token'};const req=request('/api/owner-export/status');req.headers.set('X-Apsua-Owner-Export-Token','sites-owner-token');assert.equal((await ownerExport(req,automated,false)).status,200,'owner automation requires its separate Sites token')}
 assert.equal((await ownerExport(request('/api/owner-export/status',{token:'wrong'}),env,true)).status,403,'the temporary secret is also required');
 assert.equal((await ownerExport(new Request(origin+'/api/owner-export/status',{method:'POST',headers:{Origin:'https://evil.example','X-Apsua-Export-Token':secret},body:'{}'}),env,true)).status,403,'cross-origin requests are rejected');
 

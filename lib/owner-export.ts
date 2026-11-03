@@ -3,6 +3,7 @@ type ExportEnv={
   BUCKET:R2Bucket;
   OWNER_EXPORT_ENABLED?:string;
   OWNER_EXPORT_TOKEN?:string;
+  OWNER_EXPORT_SITES_TOKEN?:string;
 };
 
 const jsonHeaders={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
@@ -79,7 +80,9 @@ export async function ownerExport(request:Request,env:ExportEnv,isOwner:boolean)
   if(!url.pathname.startsWith(prefix))return null;
   if(request.method!=='POST')return reply({error:'Метод не разрешён'},405);
   if(request.headers.get('origin')!==url.origin)return reply({error:'Недопустимый источник запроса'},403);
-  if(!isOwner)return reply({error:'Доступ только владельцу'},403);
+  const sitesToken=request.headers.get('x-apsua-owner-export-token')||'';
+  const ownerAutomation=!!env.OWNER_EXPORT_SITES_TOKEN&&!!sitesToken&&sameSecret(sitesToken,env.OWNER_EXPORT_SITES_TOKEN);
+  if(!isOwner&&!ownerAutomation)return reply({error:'Доступ только владельцу'},403);
   if(env.OWNER_EXPORT_ENABLED!=='1'||!env.OWNER_EXPORT_TOKEN)return reply({error:'Экспорт отключён'},404);
   const supplied=request.headers.get('x-apsua-export-token')||'';
   if(!supplied||!sameSecret(supplied,env.OWNER_EXPORT_TOKEN))return reply({error:'Экспорт не разрешён'},403);
