@@ -30,6 +30,17 @@ function pushFailure(job:any,provider:string,code:string){
  if(found)found.count++;else if(job.errors.length<20)job.errors.push({provider,code,count:1});
  console.error('web-push failure',JSON.stringify({provider,code}));
 }
+// A subscription is dead for good when the push service says the device is gone (404/410) or that it was
+// created with another VAPID key: an old site address or rotated keys (Apple 400 VapidPkHashMismatch,
+// Google FCM 403). Key mismatches count only while our own key pair is healthy, so a broken server
+// configuration never deletes valid subscriptions.
+export async function pushResultInfo(result:Response,endpoint:string,keysHealthy:boolean){
+ let reason='';try{const body:any=await result.json();if(typeof body?.reason==='string'&&/^[a-zA-Z0-9_-]{1,80}$/.test(body.reason))reason=body.reason}catch{}
+ let host='';try{host=new URL(endpoint).hostname}catch{}
+ const gone=result.status===404||result.status===410;
+ const otherKey=keysHealthy&&((result.status===400&&reason==='VapidPkHashMismatch')||(result.status===403&&host==='fcm.googleapis.com'));
+ return {stale:gone||otherKey,reason};
+}
 // RFC 8291 / RFC 8188 single-record aes128gcm payload, using Worker-native WebCrypto.
 export async function createPushRequest(subscription:any,payload:any,env:PushEnv){
  if(!validPushSubscription(subscription))throw new Error('Некорректная подписка');
@@ -105,13 +116,14 @@ export async function pushAPI(request:Request,env:PushEnv,user:string,owner:bool
   const job=JSON.parse(row.body);if(row.status==='done'||Number(value.cursor)!==job.cursor)return pushJson({...pushSummary(job),status:row.status});
   if(row.status==='sending')return pushJson({error:'Эта часть отправки уже выполняется'},409);
   const lock=await env.DB.prepare("UPDATE records SET status='sending',updated=? WHERE id=? AND updated=? AND status='pending'").bind(Date.now(),job.id,row.updated).run();if(!lock.meta.changes)return pushJson({error:'Отправка уже выполняется'},409);
+  const keysHealthy=!(await pushKeyHealth(env));
   const ids=job.targets.slice(job.cursor,job.cursor+25),rows=await env.DB.prepare("SELECT id,body FROM records WHERE kind='push-subscription' AND id IN ("+ids.map(()=>'?').join(',')+")").bind(...ids).all<any>();
   for(let i=0;i<ids.length;i+=5)await Promise.all(ids.slice(i,i+5).map(async(sid:string)=>{
    const saved=rows.results.find(r=>r.id===sid);if(!saved){job.expired++;return}
    if(job.audience==='news'){try{if(JSON.parse(saved.body).news!==true){job.expired++;return}}catch{job.expired++;return}}
    try{const subscription=JSON.parse(saved.body);
     const result=await sendPushRequest(subscription,{title:job.title,body:job.text,url:'/#/',tag:job.id},env);
-    if(result.ok)job.accepted++;else if([404,410].includes(result.status)){job.expired++;await env.DB.prepare("DELETE FROM records WHERE id=? AND body=?").bind(sid,saved.body).run()}else {job.failed++;let reason='';try{const body:any=await result.json();if(typeof body.reason==='string'&&/^[a-zA-Z0-9_-]{1,80}$/.test(body.reason))reason=' '+body.reason}catch{}pushFailure(job,new URL(subscription.endpoint).hostname,'HTTP '+result.status+reason)}
+    if(result.ok)job.accepted++;else{const info=await pushResultInfo(result,subscription.endpoint,keysHealthy);if(info.stale){job.expired++;await env.DB.prepare("DELETE FROM records WHERE id=? AND body=?").bind(sid,saved.body).run()}else {job.failed++;pushFailure(job,new URL(subscription.endpoint).hostname,'HTTP '+result.status+(info.reason?' '+info.reason:''))}}
    }catch(error:any){job.failed++;const code=error?.name==='TimeoutError'?'Timeout':error?.name==='AbortError'?'Aborted':error?.name==='DataError'?'CryptoDataError':error?.name==='SyntaxError'?'InvalidKeyJSON':error?.name==='InvalidAccessError'?'CryptoKeyUsage':error?.name==='OperationError'?'CryptoOperationError':'NetworkOrCryptoError';pushFailure(job,new URL(JSON.parse(saved.body).endpoint).hostname,code)}
   }));
   job.cursor+=ids.length;const status=job.cursor>=job.targets.length?'done':'pending';await env.DB.prepare('UPDATE records SET body=?,status=?,updated=? WHERE id=?').bind(JSON.stringify(job),status,Date.now(),job.id).run();return pushJson({...pushSummary(job),status})
@@ -121,4 +133,4 @@ export async function pushAPI(request:Request,env:PushEnv,user:string,owner:bool
 
 // 14.0: a personal notification to every device of one tourist (status change of their request).
 // Never throws: a failed push must not undo the order update that triggered it.
-export async function pushToUser(env:PushEnv,owner:string,message:{title:string;body:string;url?:string;tag?:string}){if(!owner||!env.VAPID_PRIVATE_JWK||!env.VAPID_PUBLIC_KEY)return 0;let sent=0;try{const rows=await env.DB.prepare("SELECT id,body FROM records WHERE kind='push-subscription' AND owner=? LIMIT 20").bind(owner).all<any>();await Promise.all(rows.results.map(async(row:any)=>{try{const result=await sendPushRequest(JSON.parse(row.body),{title:message.title.slice(0,80),body:message.body.slice(0,700),url:message.url||'/#/account',tag:message.tag||'apsua-order'},env);if(result.ok)sent++;else if([404,410].includes(result.status))await env.DB.prepare("DELETE FROM records WHERE id=? AND body=?").bind(row.id,row.body).run()}catch{}}))}catch{}return sent}
+export async function pushToUser(env:PushEnv,owner:string,message:{title:string;body:string;url?:string;tag?:string}){if(!owner||!env.VAPID_PRIVATE_JWK||!env.VAPID_PUBLIC_KEY)return 0;let sent=0;try{const rows=await env.DB.prepare("SELECT id,body FROM records WHERE kind='push-subscription' AND owner=? LIMIT 20").bind(owner).all<any>();if(!rows.results.length)return 0;const keysHealthy=!(await pushKeyHealth(env));await Promise.all(rows.results.map(async(row:any)=>{try{const subscription=JSON.parse(row.body);const result=await sendPushRequest(subscription,{title:message.title.slice(0,80),body:message.body.slice(0,700),url:message.url||'/#/account',tag:message.tag||'apsua-order'},env);if(result.ok)sent++;else if((await pushResultInfo(result,subscription.endpoint,keysHealthy)).stale)await env.DB.prepare("DELETE FROM records WHERE id=? AND body=?").bind(row.id,row.body).run()}catch{}}))}catch{}return sent}
