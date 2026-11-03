@@ -17,6 +17,7 @@ import tempfile
 import zipfile
 from datetime import datetime
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 import boto3
@@ -245,5 +246,6 @@ if __name__ == "__main__":
         main()
     except Exception as exc:
         # Never print secrets, data, SQL statements, filenames or record values.
-        print("MIGRATION FAILED:", type(exc).__name__, file=sys.stderr)
+        detail = f" status={exc.code}" if isinstance(exc, HTTPError) else ""
+        print("MIGRATION FAILED:", type(exc).__name__ + detail, file=sys.stderr)
         sys.exit(1)
