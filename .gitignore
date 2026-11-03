@@ -46,3 +46,8 @@ tsconfig.tsbuildinfo
 /outputs/
 /work/
 
+
+# Owner export contains private customer data; NEVER push a backup to GitHub.
+/private-backup/
+/private-backups/
+/owner-backup/
