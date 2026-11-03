@@ -2,6 +2,7 @@ import { siteAPI, scheduledReminders, seoFile, pageShellFor } from '../lib/site-
 import shell from '../lib/site-shell';
 import { installationAsset } from '../lib/app-icons';
 declare const __APSUA_BUILD_ID__:string;
+declare const __APSUA_SELF_HOSTED__: boolean;
 const pageShell=shell.replace('</head>','<script>window.apsuaPageBuildId='+JSON.stringify(__APSUA_BUILD_ID__)+'</script></head>');
 import handler from "vinext/server/fetch-handler";
 import { runWithConnectorBinding } from "../lib/connector-context";
@@ -13,6 +14,15 @@ import type { ConnectorBinding } from "../lib/connector-contract.mjs";
 const pageHeaders={'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Content-Security-Policy':"object-src 'none'; base-uri 'self'",'Referrer-Policy':'strict-origin-when-cross-origin','X-Content-Type-Options':'nosniff','Permissions-Policy':'camera=(), microphone=()'};
 export default {
   async fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext<{ CONNECTORS?: ConnectorBinding }>) {
+    // On our own Worker these Sites identity headers arrive from the public internet.
+    // Never trust them as authentication (especially for owner/admin permissions).
+    if (__APSUA_SELF_HOSTED__) {
+      const safeHeaders = new Headers(request.headers);
+      for (const key of Array.from(safeHeaders.keys())) {
+        if (key.toLowerCase().startsWith("oai-authenticated-user-")) safeHeaders.delete(key);
+      }
+      request = new Request(request, { headers: safeHeaders });
+    }
     const path=new URL(request.url).pathname;
     const asset=installationAsset(request);if(asset)return asset;
     if(path.startsWith('/api/'))return siteAPI(request,env as any,ctx);
