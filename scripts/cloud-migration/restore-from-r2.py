@@ -113,7 +113,7 @@ def validate_backup(raw: bytes):
         content = {}
         for item in objects:
             rel = item["file"]
-            if not re.fullmatch(r"r2/objects/[0-9a-f]{64}\\.bin", rel):
+            if not re.fullmatch(r"r2/objects/[0-9a-f]{64}\.bin", rel):
                 raise RuntimeError("Invalid media path")
             data = archive.read(root + rel)
             if len(data) != item["size"] or sha(data) != item["contentSha256"]:
