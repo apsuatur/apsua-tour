@@ -158,7 +158,7 @@ async function siteAPIInner(request:Request,env:Env):Promise<Response>{try{
 const knownVisitor=!!request.headers.get('cookie')?.match(/(?:^|; )apsua_visitor=[a-f0-9-]{36}(?:;|$)/);if(id||knownVisitor)await env.DB.prepare('INSERT OR IGNORE INTO views (story,visitor,day) VALUES (?,?,?)').bind(sid,id||visitorCookie,new Date().toISOString().slice(0,10)).run();const response=json({ok:true,counted:!!(id||knownVisitor)});response.headers.set('Set-Cookie','apsua_visitor='+visitorCookie+'; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=31536000');return response}
  const isOwner=(!testUser&&await admin(env,id,email))||(testUser&&testing?.role==='admin'),staffRole=tgUser?await telegramStaffRole(env,id):'',isAdmin=isOwner||staffRole==='admin',isEditor=testUser&&testing?.role==='editor'||staffRole==='editor',isDispatcher=staffRole==='dispatcher',isObserver=staffRole==='observer',canAccessAdmin=isAdmin||isEditor||isDispatcher||isObserver,canViewOrders=isAdmin||isDispatcher||isObserver,canManageOrders=isAdmin||isDispatcher;
  if(request.method!=='GET'){if(request.headers.get('origin')!==url.origin)return json({error:'Недопустимый источник запроса'},403);if(!id)return json({error:'Войдите в аккаунт'},401)}
- const exportResponse=await ownerExport(request,env,isOwner);if(exportResponse)return exportResponse;
+ const exportResponse=await ownerExport(request,env,isOwner&&!testUser);if(exportResponse)return exportResponse;
  if(path.startsWith('/api/push/')||path.startsWith('/api/admin/push'))return await pushAPI(request,env,id,isAdmin);
  if(path==='/api/admin/staff'&&request.method==='GET'){
   if(!isOwner)return json({error:'Управлять сотрудниками может только владелец'},403);
