@@ -1,0 +1,44 @@
+name: Validate private cloud migration scripts
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  audit-cloud-migration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check Python syntax
+        run: python -m py_compile scripts/cloud-migration/restore-from-r2.py
+      - name: Verify workflow is manual, non-destructive and secrets are outside Git
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          source=Path('scripts/cloud-migration/restore-from-r2.py').read_text()
+          workflow=Path('.github/workflows/apsua-cloud-migration.yml').read_text()
+          assert 'workflow_dispatch:' in workflow
+          assert "github.ref == 'refs/heads/main'" in workflow
+          assert 'pull_request:' not in workflow
+          assert 'push:' not in workflow
+          assert 'no backup is uploaded to GitHub Artifacts' in workflow.lower() or 'no backup is uploaded to github artifacts' in workflow.lower()
+          for key in ['CLOUDFLARE_API_TOKEN','CLOUDFLARE_ACCOUNT_ID','APSUA_D1_DATABASE_ID','APSUA_R2_ACCESS_KEY_ID','APSUA_R2_SECRET_ACCESS_KEY']:
+              assert f'secrets.{key}' in workflow
+          assert 'def remote_counts' in source
+          assert 'if counts:' in source
+          assert 'existing - expected' in source
+          assert 'if mode == "verify":' in source
+          assert 'def validate_backup' in source
+          assert 'sha(raw) != BACKUP_SHA256' in source
+          assert 'R2 verified:' in source
+          assert 'd1", "execute"' in source
+          print('PASS: guarded cloud migration scripts')
+          PY
