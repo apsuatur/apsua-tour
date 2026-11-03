@@ -1,0 +1,76 @@
+name: Deploy apsuatur-prod Worker (manual only)
+
+# Builds the standalone Worker with the restored D1/R2 bindings and deploys it to
+# Cloudflare as apsuatur-prod (workers.dev only). It never touches DNS, custom domains,
+# the ChatGPT Sites project, D1/R2 contents or Worker secrets.
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type DEPLOY-APSUATUR-PROD"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apsuatur-prod-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_CF_FETCH_ENABLED: "false"
+      WRANGLER_SEND_METRICS: "false"
+      WRANGLER_WRITE_LOGS: "false"
+    steps:
+      - name: Check manual confirmation
+        env:
+          CONFIRM: ${{ inputs.confirmation }}
+        run: |
+          if [ "$CONFIRM" != "DEPLOY-APSUATUR-PROD" ]; then
+            echo "Deploy not confirmed"; exit 1
+          fi
+
+      - name: Checkout source (no persistent Git credentials)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned repository dependencies
+        run: npm ci
+
+      - name: Build standalone Worker
+        env:
+          APSUA_SELF_HOSTED: "1"
+          APSUA_WORKER_NAME: "apsuatur-prod"
+          APSUA_D1_DATABASE_NAME: "apsuatur-db"
+          APSUA_R2_BUCKET_NAME: "apsuatur-media"
+          APSUA_D1_DATABASE_ID: ${{ secrets.APSUA_D1_DATABASE_ID }}
+        run: |
+          npm run build
+          node scripts/check-self-hosted-build.mjs
+
+      - name: Refuse routes or custom domains in the deploy config
+        run: |
+          node -e '
+            const c = require("./dist/server/wrangler.json");
+            if (c.route || (c.routes && c.routes.length)) { console.error("Deploy config contains routes; refusing"); process.exit(1); }
+            console.log("Deploy config: workers.dev only, no routes or custom domains");
+          '
+
+      - name: Deploy to Cloudflare (workers.dev only)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        # --keep-vars keeps variables set in the Cloudflare dashboard; secrets are always kept.
+        run: npx wrangler deploy --config dist/server/wrangler.json --keep-vars
