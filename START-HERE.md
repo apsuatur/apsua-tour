@@ -30,6 +30,7 @@ node tests/rail-motion.mjs
 node tests/telegram-login-ui.mjs
 node tests/telegram-app.mjs
 node tests/telegram-oidc.mjs
+node tests/yandex-auth.mjs
 node tests/telegram-key-cache.mjs
 node tests/telegram-web.mjs
 node tests/account-ui.mjs

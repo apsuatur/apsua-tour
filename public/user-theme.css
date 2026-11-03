@@ -799,3 +799,7 @@ html{scroll-padding-top:calc(76px + env(safe-area-inset-top,0px))}
 /* 18.3 — preserve dual price slider layout inside compact disclosure. */
 .catalog-price>fieldset>.price-values{display:flex;gap:10px;align-items:center;justify-content:space-between}.catalog-price>fieldset>.price-range{position:relative;display:block;height:36px;margin:0 12px;isolation:isolate}
 @media(max-width:700px){.catalog-price>fieldset>.price-values{gap:7px}.catalog-price>fieldset>.price-range{height:34px;margin-inline:12px}}
+
+/* 24.2 — вход через Яндекс */
+.auth-divider{display:flex;align-items:center;gap:12px;margin:14px 0;color:var(--muted,#737780);font-size:13px}.auth-divider::before,.auth-divider::after{content:"";height:1px;flex:1;background:rgba(20,26,36,.12)}
+.yandex-login{width:100%;min-height:50px;display:flex;align-items:center;justify-content:center;gap:10px;background:#fc3f1d;color:#fff;border-color:transparent;border-radius:16px;font-weight:700}.yandex-login:hover{background:#e93617}.yandex-login b{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#fff;color:#fc3f1d;font-size:17px;font-family:Arial,sans-serif}.telegram-signin-dialog [data-yandex-dialog]{margin-top:10px}
