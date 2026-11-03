@@ -60,6 +60,35 @@ def all_keys(client) -> set[str]:
     return keys
 
 
+def cloudflare_codes(doc) -> str:
+    """Only numeric Cloudflare error codes: never messages, data or secrets."""
+    errors = doc.get("errors") if isinstance(doc, dict) else None
+    codes = [e.get("code") for e in errors or [] if isinstance(e, dict)]
+    codes = [str(c) for c in codes if isinstance(c, int)]
+    return f" (cloudflare codes={','.join(codes)})" if codes else ""
+
+
+def safe_failure_detail(exc: Exception) -> str:
+    """Short failure reason for the Actions log without secrets or customer data."""
+    if isinstance(exc, HTTPError):
+        try:
+            doc = json.loads(exc.read(200_000))
+        except Exception:
+            doc = None
+        return f" status={exc.code}" + cloudflare_codes(doc)
+    if isinstance(exc, RuntimeError):
+        # Every RuntimeError in this script is a fixed check description.
+        return f": {exc}"
+    response = getattr(exc, "response", None)
+    if isinstance(response, dict):
+        # botocore ClientError: S3 error code and HTTP status only.
+        code = str(response.get("Error", {}).get("Code", "?"))
+        status = response.get("ResponseMetadata", {}).get("HTTPStatusCode", "?")
+        if re.fullmatch(r"[A-Za-z0-9.]{1,64}", code):
+            return f" s3 code={code} status={status}"
+    return ""
+
+
 def cloudflare_api(account: str, database_id: str, token: str, suffix="", query=None):
     url = f"https://api.cloudflare.com/client/v4/accounts/{account}/d1/database/{database_id}{suffix}"
     payload = json.dumps({"sql": query}).encode() if query else None
@@ -68,7 +97,7 @@ def cloudflare_api(account: str, database_id: str, token: str, suffix="", query=
     with urlopen(req, timeout=30) as response:
         doc = json.loads(response.read(2_000_000))
     if doc.get("success") is not True:
-        raise RuntimeError("Cloudflare D1 API rejected a request")
+        raise RuntimeError("Cloudflare D1 API rejected a request" + cloudflare_codes(doc))
     return doc["result"]
 
 
@@ -246,6 +275,6 @@ if __name__ == "__main__":
         main()
     except Exception as exc:
         # Never print secrets, data, SQL statements, filenames or record values.
-        detail = f" status={exc.code}" if isinstance(exc, HTTPError) else ""
-        print("MIGRATION FAILED:", type(exc).__name__ + detail, file=sys.stderr)
+        sys.stdout.flush()  # keep progress lines before the failure line in the log
+        print("MIGRATION FAILED:", type(exc).__name__ + safe_failure_detail(exc), file=sys.stderr)
         sys.exit(1)
