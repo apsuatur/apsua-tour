@@ -806,7 +806,7 @@ html{scroll-padding-top:calc(76px + env(safe-area-inset-top,0px))}
 
 /* 24.3 — equal provider choices; Telegram details stay beside their trigger. */
 .signin-providers{display:flex;flex-direction:column;gap:12px;width:100%;text-align:left}
-.signin-providers .signin-provider{box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:54px;padding:12px 18px;border:1px solid var(--line,#dddde3);border-radius:16px;background:var(--surface,#fff);color:var(--ink,#1f1f21);font:inherit;font-weight:600;cursor:pointer;text-decoration:none;list-style:none;margin:0}
+.signin-providers .signin-provider{box-sizing:border-box;display:grid;grid-template-columns:26px minmax(0,1fr) 26px;align-items:center;gap:12px;text-align:center;width:100%;min-height:54px;padding:12px 18px;border:1px solid var(--line,#dddde3);border-radius:16px;background:var(--surface,#fff);color:var(--ink,#1f1f21);font:inherit;font-weight:600;cursor:pointer;text-decoration:none;list-style:none;margin:0}
 .signin-provider::-webkit-details-marker{display:none}
 .signin-providers .signin-provider:hover{background:var(--surface-2,#f0f0f2)}
 .signin-providers .signin-provider-mark{display:grid;place-items:center;flex:none;width:26px;height:26px;border-radius:50%;background:#229ed9;color:#fff;font:700 17px Arial,sans-serif}
@@ -816,4 +816,4 @@ html{scroll-padding-top:calc(76px + env(safe-area-inset-top,0px))}
 .signin-providers .v152-tg-qr{grid-template-columns:120px minmax(0,1fr)}
 @media(max-width:560px){.signin-providers .v152-tg-qr{grid-template-columns:1fr}.signin-providers .v152-tg-actions{flex-wrap:wrap}}
 
-.signin-providers .signin-provider-mark img{display:block;width:18px;height:18px;max-width:none;object-fit:contain}.signin-providers .yandex-login .signin-provider-mark img{width:15px}
+.signin-providers .signin-provider-mark img{display:block;width:18px;height:18px;max-width:none;object-fit:contain}.signin-providers .yandex-login .signin-provider-mark img{width:13px;height:18px}
