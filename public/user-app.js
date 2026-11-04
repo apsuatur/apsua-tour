@@ -287,6 +287,13 @@ const qString=()=>{const p=new URLSearchParams();if(ui.q.district)p.set('distric
 function syncCatalogHash(){if(current==='catalog'){history.replaceState(history.state,'','/excursions'+qString());routePreviousURL=location.href}}
 
 let popEl=null,cal={y:0,m:0,target:'q'};
+/* Plain lists open in the same window as the calendar: a sheet on the phone, a popover on the computer.
+   The real <select> stays in the page (hidden) so forms and their handlers work as before. */
+const SHEET_SELECTS='.fleet-filters select.input,#tripPicker select.input,#booking select.input';
+function selectTitle(sel){const label=sel.closest('label');const text=label?[...label.childNodes].filter(n=>n.nodeType===3||n.tagName==='SPAN').map(n=>n.textContent).join(' ').replace(/\s+/g,' ').trim():'';return text.replace(/^\d+\.\s*/,'')||sel.getAttribute('aria-label')||''}
+function syncSelectButton(sel){const btn=sel?.nextElementSibling;if(!btn?.classList.contains('select-btn'))return;const o=sel.options[sel.selectedIndex],text=o?o.textContent.trim():'',span=btn.querySelector('span');if(span.textContent!==text)span.textContent=text;if(btn.disabled!==sel.disabled)btn.disabled=sel.disabled}
+function enhanceSelects(root=document){for(const sel of root.querySelectorAll?.(SHEET_SELECTS)||[]){if(sel.nextElementSibling?.classList.contains('select-btn')){syncSelectButton(sel);continue}const btn=document.createElement('button');btn.type='button';btn.className='select-btn';btn.dataset.popOpen='select';btn.setAttribute('aria-haspopup','listbox');btn.setAttribute('aria-expanded','false');const label=selectTitle(sel);if(label)btn.setAttribute('aria-label',label);btn.innerHTML='<span></span>';sel.classList.add('select-hidden');sel.tabIndex=-1;sel.setAttribute('aria-hidden','true');sel.after(btn);sel.addEventListener('change',()=>syncSelectButton(sel));syncSelectButton(sel)}}
+if(typeof MutationObserver!=='undefined')new MutationObserver(()=>enhanceSelects(document.getElementById('app')||document)).observe(document.documentElement,{childList:true,subtree:true});
 function closePop(){if(!popEl)return;if(popEl._bd)popEl._bd.remove();const b=popEl._btn;popEl.remove();popEl=null;if(b){b.setAttribute('aria-expanded','false')}}
 function openPop(btn,kind){
  closePop();const el=document.createElement('div');el.className='popover';el.dataset.kind=kind;el.setAttribute('role','dialog');
@@ -295,7 +302,7 @@ function openPop(btn,kind){
  document.body.appendChild(el);popEl=el;el._btn=btn;btn.setAttribute('aria-expanded','true');
  if(['date','trdate','reviewdate'].includes(kind)){const cur=kind==='reviewdate'?$('#rv-date')?.value:kind==='date'?ui.q.date:tr.date;const d=cur?fromIso(cur):today0();cal={y:d.getFullYear(),m:d.getMonth(),target:kind}}
  drawPop();
- if(!mobile){const r=btn.getBoundingClientRect();const w=['district','departure'].includes(kind)?300:348;let left=r.left+scrollX;left=Math.min(left,scrollX+document.documentElement.clientWidth-w-12);el.style.top=(r.bottom+scrollY+8)+'px';el.style.left=Math.max(12,left)+'px';el.style.width=w+'px'}
+ if(!mobile){const r=btn.getBoundingClientRect();const w=kind==='select'?Math.max(260,Math.round(r.width)):['district','departure'].includes(kind)?300:348;let left=r.left+scrollX;left=Math.min(left,scrollX+document.documentElement.clientWidth-w-12);el.style.top=(r.bottom+scrollY+8)+'px';el.style.left=Math.max(12,left)+'px';el.style.width=w+'px'}
  let x0=null;el.addEventListener('touchstart',e=>{x0=e.touches[0].clientX},{passive:true});
  el.addEventListener('touchend',e=>{if(x0===null||!el.querySelector('.cal-grid'))return;const dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>50)calShift(dx<0?1:-1);x0=null});
  setTimeout(()=>{const f=el.querySelector('[aria-selected="true"],[aria-pressed="true"],button');if(f)f.focus({preventScroll:true})},30);
@@ -304,6 +311,7 @@ function calShift(n){const t=today0();let m=cal.m+n,y=cal.y;if(m<0){m=11;y--}if(
 function drawPop(){
  const el=popEl;if(!el)return;const k=el.dataset.kind;const grab=el.classList.contains('sheet')?'<span class="grab" aria-hidden="true"></span>':'';
  if(k==='people'){el.innerHTML=`${grab}<p class="pop-title">Сколько вас</p><div class="input sstep">${ICON.users}<span class="sstep-n">${ui.q.people} ${plural(ui.q.people,'человек','человека','человек')}</span><button type="button" data-q-people="-1" aria-label="Меньше" ${ui.q.people<=1?'disabled':''}>−</button><button type="button" data-q-people="1" aria-label="Больше" ${ui.q.people>=20?'disabled':''}>+</button></div>`;return}
+ if(k==='select'){const sel=el._btn?.previousElementSibling;if(!sel||sel.tagName!=='SELECT'){closePop();return}const title=selectTitle(sel)||'Выберите';el.innerHTML=`${grab}<p class="pop-title">${esc(title)}</p><div class="plist" role="listbox" aria-label="${esc(title)}">${[...sel.options].filter(o=>!o.hidden).map((o,i)=>`<button type="button" role="option" data-pick-option="${o.index}" aria-selected="${o.selected}" ${o.disabled?'disabled':''}><span><b>${esc(o.textContent.trim())}</b></span>${o.selected?ICON.yes:''}</button>`).join('')}</div>`;return}
  if(k==='departure'){el.innerHTML=`${grab}<p class="pop-title">Город выезда</p><div class="plist" role="listbox" aria-label="Город выезда">${['',...allDepartureCities()].map(city=>{const n=C.tours.filter(t=>tourPublic(t,ui.q.date,city)).length;return `<button type="button" role="option" data-pick-departure="${esc(city)}" aria-selected="${ui.q.city===city}"><span><b>${esc(city||'Все города')}</b><small>${n?n+' '+plural(n,'маршрут','маршрута','маршрутов'):'скоро'}</small></span>${ui.q.city===city?ICON.yes:''}</button>`}).join('')}</div>`;return}
  if(k==='district'){el.innerHTML=`${grab}<p class="pop-title">Куда хочется</p><div class="plist" role="listbox" aria-label="Район">${[{id:'',name:'Вся Абхазия',about:'Все маршруты'}].concat(DISTRICTS).map(d=>{const n=C.tours.filter(t=>tourPublic(t)&&(!d.id||tourInDistrict(t,d.id))).length;return `<button type="button" role="option" data-pick-district="${d.id}" aria-selected="${ui.q.district===d.id}"><span><b>${esc(d.name)}</b><small>${n?n+' '+plural(n,'маршрут','маршрута','маршрутов'):'скоро'}</small></span>${ui.q.district===d.id?ICON.yes:''}</button>`}).join('')}</div>`;return}
  const t=today0(),review=cal.target==='reviewdate',sel=review?$('#rv-date')?.value:cal.target==='date'?ui.q.date:tr.date;const first=new Date(cal.y,cal.m,1),start=(first.getDay()+6)%7,dim=new Date(cal.y,cal.m+1,0).getDate();
@@ -797,6 +805,7 @@ document.addEventListener('click',e=>{
  if(popEl&&!popEl.contains(e.target)&&!e.target.closest('[data-pop-open]'))closePop();
  if(e.target.closest('.adm')&&adminApp?.click(e))return;
  if(accClick(e))return;
+ const pso=e.target.closest('[data-pick-option]');if(pso&&popEl?.dataset.kind==='select'){const btn=popEl._btn,sel=btn?.previousElementSibling;closePop();if(sel&&sel.selectedIndex!==Number(pso.dataset.pickOption)){sel.selectedIndex=Number(pso.dataset.pickOption);sel.dispatchEvent(new Event('input',{bubbles:true}));sel.dispatchEvent(new Event('change',{bubbles:true}))}syncSelectButton(sel);btn?.focus({preventScroll:true});return}
  const po=e.target.closest('[data-pop-open]');if(po){if(popEl&&popEl._btn===po){closePop();return}openPop(po,po.dataset.popOpen);return}
  const pcity=e.target.closest('[data-pick-departure]');if(pcity){ui.q.city=pcity.dataset.pickDeparture;ui.priceMin=null;ui.priceMax=null;closePop();refreshSearch();renderCards();syncPriceControls();syncCatalogHash();return}
  const pdis=e.target.closest('[data-pick-district]');if(pdis){ui.q.district=pdis.dataset.pickDistrict;closePop();refreshSearch();if(current==='catalog'){renderCards();syncCatalogHash()}else if(current==='home')renderCards();return}

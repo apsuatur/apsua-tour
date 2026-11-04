@@ -50,3 +50,10 @@ console.log('PASS: seasonal listing prices agree with the booking server across 
  const css=fs.readFileSync('public/v152.css','utf8'),row=css.slice(css.lastIndexOf('@media(max-width:700px){\nhtml body #app .catalog-compact-toolbar .catalog-selects{display:grid'));
  assert.match(row,/grid-template-columns:minmax\(0,70fr\) minmax\(0,144fr\) minmax\(0,128fr\)/);assert.match(row,/catalog-selects>\*\{grid-column:auto!important;grid-row:1!important/,'no filter may take a whole row');
  console.log('PASS: catalogue filters stay in one row on the phone: Цена, формат, сортировка.')}
+// Plain lists (fleet, trip picker, tour booking) open in the shared window; the real <select> stays for the form.
+{assert.ok(src.includes("const SHEET_SELECTS='.fleet-filters select.input,#tripPicker select.input,#booking select.input'"));
+ assert.ok(src.includes("if(k==='select'){")&&src.includes('data-pick-option'),'option window is drawn');
+ assert.match(src,/sel\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/,'choosing an option fires change like the native list');
+ const css=fs.readFileSync('public/apple-system.css','utf8');assert.match(css,/select\.select-hidden\{position:absolute!important/);
+ assert.match(css,/@media \(max-width:640px\)\{\n html body dialog:is\(\.telegram-signin-dialog/,'dialogs are sheets on the phone');
+ console.log('PASS: lists open in the shared window and keep the hidden select; dialogs are sheets on the phone.')}

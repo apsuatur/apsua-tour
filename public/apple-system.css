@@ -52,21 +52,60 @@ html body:not(.is-admin) #app .tabs.inst-tabs{display:grid!important;grid-auto-f
 html body:not(.is-admin) #app .tabs.inst-tabs>button{min-height:32px!important;border:0!important;border-radius:999px!important;background:transparent!important;color:var(--ui-ink)!important;font:500 14px/1.2 var(--f-body)!important;box-shadow:none!important}
 html body:not(.is-admin) #app .tabs.inst-tabs>button:is(.on,[aria-selected=true],[aria-pressed=true]){background:var(--ui-surface)!important;font-weight:600!important;box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.04)!important}
 
-/* ---------- Fields: plain selects on fleet and trip picker ---------- */
-html body:not(.is-admin) #app :is(.fleet-filters,#tripPicker) select.input{-webkit-appearance:none!important;appearance:none!important;width:100%!important;min-height:48px!important;padding:0 40px 0 16px!important;border:0!important;border-radius:var(--ui-r-tile)!important;background:var(--ui-surface) var(--ui-chevron) no-repeat right 16px center!important;color:var(--ui-ink)!important;font:400 16px/1.2 var(--f-body)!important;box-shadow:var(--ui-tile-shadow)!important}
+/* ---------- Lists that open a window (fleet, trip picker, tour booking) ---------- */
+html body:not(.is-admin) #app select.select-hidden{position:absolute!important;width:1px!important;height:1px!important;min-height:0!important;padding:0!important;margin:0!important;border:0!important;opacity:0!important;pointer-events:none!important;overflow:hidden!important}
+html body:not(.is-admin) #app .select-btn{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;width:100%!important;min-width:0!important;border:0!important;cursor:pointer;font-family:var(--f-body)!important;text-align:left!important;-webkit-tap-highlight-color:transparent;transition:transform .12s ease,background-color .2s ease!important}
+html body:not(.is-admin) #app .select-btn>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html body:not(.is-admin) #app .select-btn::after{content:"";flex:none;width:12px;height:8px;background:var(--ui-chevron) no-repeat center/contain;transition:transform .2s ease}
+html body:not(.is-admin) #app .select-btn[aria-expanded=true]::after{transform:rotate(180deg)}
+/* as a white field */
+html body:not(.is-admin) #app :is(.fleet-filters,#tripPicker) .select-btn{min-height:48px!important;padding:0 16px!important;border-radius:var(--ui-r-tile)!important;background:var(--ui-surface)!important;color:var(--ui-ink)!important;font-size:16px!important;font-weight:400!important;box-shadow:var(--ui-tile-shadow)!important}
+html body:not(.is-admin) #app :is(.fleet-filters,#tripPicker) .select-btn:active{transform:scale(.99)}
 html body:not(.is-admin) #app :is(.fleet-filters,#tripPicker) .field>span{display:block;margin:0 0 6px!important;font:500 13px/1.25 var(--f-body)!important;color:var(--ui-ink-2)!important;letter-spacing:0!important}
-html body:not(.is-admin) #app #tripPicker .field{display:block}
+html body:not(.is-admin) #app #tripPicker .field,html body:not(.is-admin) #app .fleet-filters .field{display:block;position:relative}
+/* inside a booking row: the value on the right */
+html body:not(.is-admin) #app #booking .select-btn{width:auto!important;max-width:60%;min-height:44px!important;padding:0 2px 0 8px!important;margin-left:auto!important;background:transparent!important;color:var(--ui-ink)!important;font-size:16px!important;font-weight:500!important;box-shadow:none!important;justify-content:flex-end!important}
+html body:not(.is-admin) #app #booking .field:has(.select-btn){position:relative}
+
+/* ---------- Option lists inside a window: plain rows, a blue tick on the chosen one ---------- */
+html body .popover .plist{display:grid!important;gap:0!important}
+html body .popover .plist>button{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;width:100%!important;min-height:46px!important;padding:10px 12px!important;border:0!important;border-radius:10px!important;background:transparent!important;color:var(--ui-ink)!important;box-shadow:none!important;text-align:left!important}
+html body .popover .plist>button+button{box-shadow:inset 0 .5px 0 var(--ui-line)!important}
+html body .popover .plist>button>span{display:flex!important;align-items:baseline!important;justify-content:space-between!important;gap:10px!important;flex:1;min-width:0}
+html body .popover .plist>button b{font:400 16px/1.3 var(--f-body)!important;color:var(--ui-ink)!important}
+html body .popover .plist>button small{font:400 13px/1.3 var(--f-body)!important;color:var(--ui-ink-2)!important}
+html body .popover .plist>button[aria-selected=true] b{font-weight:600!important;color:var(--ui-blue)!important}
+html body .popover .plist>button svg{width:18px!important;height:18px!important;flex:none;color:var(--ui-blue)!important}
+html body .popover .plist>button:not(:disabled):active{background:var(--ui-fill)!important}
+@media (hover:hover){html body .popover .plist>button:not(:disabled):hover{background:var(--ui-fill)!important}}
+html body .popover .plist>button:disabled{opacity:.4}
+html body .popover .pop-title{margin:2px 4px 8px!important;font:600 17px/1.3 var(--f-body)!important;color:var(--ui-ink)!important}
+html body .popover.sheet[data-kind=select]{border-radius:22px 22px 0 0;padding:10px 14px calc(14px + env(safe-area-inset-bottom,0px));max-height:70dvh;overflow:auto}
+html body .popover:not(.sheet)[data-kind=select]{max-height:min(420px,60vh);overflow:auto;padding:10px}
+
+/* ---------- Dialogs: a sheet from the bottom on the phone, a centred card on the computer ---------- */
+html body dialog:is(.telegram-signin-dialog,.terms-dialog,.request-result-dialog,.tourist-dialog,.profile-editor){border:0!important;border-radius:22px!important;background:var(--ui-surface)!important;box-shadow:0 20px 60px rgba(0,0,0,.18)!important}
+html body dialog:is(.telegram-signin-dialog,.terms-dialog,.request-result-dialog,.tourist-dialog,.profile-editor)::backdrop{background:rgba(0,0,0,.32)!important;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+html body dialog:is(.telegram-signin-dialog,.terms-dialog,.request-result-dialog,.tourist-dialog,.profile-editor) :is(.receipt-close,header [data-terms-close]){width:30px!important;height:30px!important;border:0!important;border-radius:50%!important;background:var(--ui-fill)!important;color:var(--ui-ink-2)!important;box-shadow:none!important}
+@media (max-width:640px){
+ html body dialog:is(.telegram-signin-dialog,.terms-dialog,.request-result-dialog,.tourist-dialog,.profile-editor)[open]{position:fixed!important;inset:auto 0 0 0!important;width:100%!important;max-width:100%!important;height:auto!important;max-height:90dvh!important;margin:0!important;border-radius:22px 22px 0 0!important;padding-top:28px!important;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))!important;animation:ui-sheet-in .32s cubic-bezier(.32,.72,0,1)}
+ html body dialog:is(.telegram-signin-dialog,.terms-dialog,.request-result-dialog,.tourist-dialog,.profile-editor)[open]::before{content:"";position:absolute;top:8px;left:50%;width:36px;height:5px;margin-left:-18px;border-radius:3px;background:rgba(60,60,67,.3)}
+}
+/* the scrolling text of a dialog takes focus for screen readers; it needs no ring */
+html body dialog :is(.terms-body,[tabindex="-1"]):focus{outline:none!important}
+@keyframes ui-sheet-in{from{transform:translateY(100%)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){html body dialog[open]{animation:none!important}}
 
 /* ---------- Sign-in buttons: one look for every provider ---------- */
-html body:not(.is-admin) #app :is(summary.signin-provider,button.signin-provider){display:flex!important;align-items:center!important;justify-content:center!important;gap:10px!important;min-height:var(--ui-h-l)!important;padding:0 18px!important;border:0!important;border-radius:var(--ui-r-tile)!important;background:var(--ui-surface)!important;color:var(--ui-ink)!important;font:600 16px/1.2 var(--f-body)!important;box-shadow:var(--ui-tile-shadow)!important}
-html body:not(.is-admin) #app :is(summary.signin-provider,button.signin-provider):active{transform:scale(.98)}
+html body:not(.is-admin) :is(#app,dialog) :is(summary.signin-provider,button.signin-provider){display:flex!important;align-items:center!important;justify-content:center!important;gap:10px!important;min-height:var(--ui-h-l)!important;padding:0 18px!important;border:0!important;border-radius:var(--ui-r-tile)!important;background:var(--ui-surface)!important;color:var(--ui-ink)!important;font:600 16px/1.2 var(--f-body)!important;box-shadow:var(--ui-tile-shadow)!important}
+html body:not(.is-admin) :is(#app,dialog) :is(summary.signin-provider,button.signin-provider):active{transform:scale(.98)}
 
 /* ---------- Text links that looked like buttons ---------- */
 html body:not(.is-admin) #app button.terms-link{display:inline!important;min-height:0!important;padding:0!important;border:0!important;border-radius:0!important;background:none!important;color:var(--ui-blue)!important;font:inherit!important;text-decoration:none!important;box-shadow:none!important}
 
 /* ---------- Focus: a soft blue ring, only for keyboard ---------- */
-html body:not(.is-admin) #app :is(button,a,summary,[tabindex]):focus:not(:focus-visible){outline:none}
-html body:not(.is-admin) #app :is(button,a,summary,[tabindex]:not(input):not(select):not(textarea)):focus-visible{outline:none!important;box-shadow:var(--ui-ring)!important}
+html body:not(.is-admin) #app :is(button,a,summary):focus:not(:focus-visible){outline:none}
+html body:not(.is-admin) #app :is(button,a,summary):focus-visible{outline:none!important;box-shadow:var(--ui-ring)!important}
 html body:not(.is-admin) #app :is(.fleet-filters,#tripPicker) select.input:focus-visible{outline:none!important;box-shadow:var(--ui-tile-shadow),var(--ui-ring)!important}
 
 /* ---------- Text selection ---------- */
