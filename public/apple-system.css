@@ -1,0 +1,81 @@
+/* 25.8 — one look for buttons, chips, fields and the selected state on every public page.
+   Loaded last. Admin (body.is-admin) keeps its own styles. The transfer form (#trForm) and the
+   catalogue filter row were tuned separately and are left as they are.
+
+   Sizes:   large 50px (main action) · regular 44px · small 34px (chips, compact actions)
+   Shapes:  buttons and chips are pills; fields and tiles have 14px corners
+   Colours: blue = main action; soft grey = secondary; selected = soft blue with blue text */
+
+:root{
+ --ui-blue:var(--apple-blue,#0071e3);
+ --ui-blue-press:#0062c4;
+ --ui-blue-soft:rgba(0,113,227,.12);
+ --ui-fill:rgba(120,120,128,.12);
+ --ui-fill-press:rgba(120,120,128,.22);
+ --ui-ink:var(--apple-ink,#1d1d1f);
+ --ui-ink-2:var(--apple-ink-2,#6e6e73);
+ --ui-surface:var(--apple-surface,#fff);
+ --ui-line:rgba(0,0,0,.08);
+ --ui-tile-shadow:0 0 0 .5px rgba(0,0,0,.06),0 2px 10px rgba(0,0,0,.05);
+ --ui-ring:0 0 0 3px rgba(0,113,227,.32);
+ --ui-h-l:50px;--ui-h-m:44px;--ui-h-s:34px;
+ --ui-r-tile:14px;
+ --ui-chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%238e8e93' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+}
+
+/* ---------- Buttons ---------- */
+html body:not(.is-admin) #app .btn{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;min-height:var(--ui-h-m)!important;padding:0 20px!important;border:0!important;border-radius:999px!important;font-family:var(--f-body)!important;font-size:15px!important;font-weight:600!important;line-height:1.2!important;letter-spacing:-.01em!important;text-align:center!important;text-decoration:none!important;white-space:normal;box-shadow:none!important;-webkit-tap-highlight-color:transparent;transition:transform .12s ease,background-color .2s ease,color .2s ease!important}
+html body:not(.is-admin) #app .btn.small{min-height:var(--ui-h-s)!important;padding:0 14px!important;font-size:14px!important;font-weight:500!important}
+html body:not(.is-admin) #app .btn.block{width:100%!important;min-height:var(--ui-h-l)!important;font-size:17px!important}
+html body:not(.is-admin) #app :is(.btn-sea,.btn-accent,.btn-primary){background:var(--ui-blue)!important;color:#fff!important}
+html body:not(.is-admin) #app .btn-ghost{background:var(--ui-fill)!important;color:var(--ui-ink)!important}
+html body:not(.is-admin) #app .btn:not(:disabled):active{transform:scale(.97)}
+html body:not(.is-admin) #app :is(.btn-sea,.btn-accent,.btn-primary):not(:disabled):active{background:var(--ui-blue-press)!important}
+html body:not(.is-admin) #app .btn-ghost:not(:disabled):active{background:var(--ui-fill-press)!important}
+@media (hover:hover){
+ html body:not(.is-admin) #app :is(.btn-sea,.btn-accent,.btn-primary):not(:disabled):hover{background:var(--ui-blue-press)!important;color:#fff!important}
+ html body:not(.is-admin) #app .btn-ghost:not(:disabled):hover{background:var(--ui-fill-press)!important;color:var(--ui-ink)!important}
+}
+html body:not(.is-admin) #app .btn:disabled,html body:not(.is-admin) #app .btn[aria-disabled=true]{opacity:.4!important;transform:none!important}
+/* buttons at the bottom of a sheet are large */
+html body:not(.is-admin) #app .price-actions .btn{min-height:var(--ui-h-l)!important;font-size:16px!important;font-weight:600!important}
+
+/* ---------- Chips (categories, districts, quick dates) ---------- */
+html body:not(.is-admin) #app :is(.chip.chip.chip,.cal-shortcuts.cal-shortcuts>button,.tour-section-nav.tour-section-nav>a){display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:var(--ui-h-s)!important;height:auto!important;padding:0 14px!important;border:0!important;border-radius:999px!important;background:var(--ui-fill)!important;color:var(--ui-ink)!important;font-family:var(--f-body)!important;font-size:14px!important;font-weight:500!important;line-height:1.2!important;white-space:nowrap!important;box-shadow:none!important;transition:transform .12s ease,background-color .2s ease,color .2s ease!important}
+html body:not(.is-admin) #app :is(.chip.chip.chip,.cal-shortcuts.cal-shortcuts>button,.tour-section-nav.tour-section-nav>a):is(.on,[aria-pressed=true],[aria-selected=true]){background:var(--ui-blue-soft)!important;color:var(--ui-blue)!important;font-weight:600!important}
+html body:not(.is-admin) #app :is(.chip.chip.chip,.cal-shortcuts.cal-shortcuts>button,.tour-section-nav.tour-section-nav>a):not(:disabled):active{transform:scale(.96)}
+@media (hover:hover){html body:not(.is-admin) #app :is(.chip.chip.chip,.cal-shortcuts.cal-shortcuts>button,.tour-section-nav.tour-section-nav>a):not(.on):not([aria-pressed=true]):not([aria-selected=true]):hover{background:var(--ui-fill-press)!important;color:var(--ui-ink)!important}}
+html body:not(.is-admin) #app .chip>:is(small,b,i,span:not(:first-child)){color:inherit;opacity:.6}
+
+/* ---------- Segmented control (install page tabs) ---------- */
+html body:not(.is-admin) #app .tabs.inst-tabs{display:grid!important;grid-auto-flow:column;grid-auto-columns:1fr;gap:2px!important;padding:2px!important;border-radius:999px!important;background:var(--ui-fill)!important}
+html body:not(.is-admin) #app .tabs.inst-tabs>button{min-height:32px!important;border:0!important;border-radius:999px!important;background:transparent!important;color:var(--ui-ink)!important;font:500 14px/1.2 var(--f-body)!important;box-shadow:none!important}
+html body:not(.is-admin) #app .tabs.inst-tabs>button:is(.on,[aria-selected=true],[aria-pressed=true]){background:var(--ui-surface)!important;font-weight:600!important;box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.04)!important}
+
+/* ---------- Fields: plain selects on fleet and trip picker ---------- */
+html body:not(.is-admin) #app :is(.fleet-filters,#tripPicker) select.input{-webkit-appearance:none!important;appearance:none!important;width:100%!important;min-height:48px!important;padding:0 40px 0 16px!important;border:0!important;border-radius:var(--ui-r-tile)!important;background:var(--ui-surface) var(--ui-chevron) no-repeat right 16px center!important;color:var(--ui-ink)!important;font:400 16px/1.2 var(--f-body)!important;box-shadow:var(--ui-tile-shadow)!important}
+html body:not(.is-admin) #app :is(.fleet-filters,#tripPicker) .field>span{display:block;margin:0 0 6px!important;font:500 13px/1.25 var(--f-body)!important;color:var(--ui-ink-2)!important;letter-spacing:0!important}
+html body:not(.is-admin) #app #tripPicker .field{display:block}
+
+/* ---------- Sign-in buttons: one look for every provider ---------- */
+html body:not(.is-admin) #app :is(summary.signin-provider,button.signin-provider){display:flex!important;align-items:center!important;justify-content:center!important;gap:10px!important;min-height:var(--ui-h-l)!important;padding:0 18px!important;border:0!important;border-radius:var(--ui-r-tile)!important;background:var(--ui-surface)!important;color:var(--ui-ink)!important;font:600 16px/1.2 var(--f-body)!important;box-shadow:var(--ui-tile-shadow)!important}
+html body:not(.is-admin) #app :is(summary.signin-provider,button.signin-provider):active{transform:scale(.98)}
+
+/* ---------- Text links that looked like buttons ---------- */
+html body:not(.is-admin) #app button.terms-link{display:inline!important;min-height:0!important;padding:0!important;border:0!important;border-radius:0!important;background:none!important;color:var(--ui-blue)!important;font:inherit!important;text-decoration:none!important;box-shadow:none!important}
+
+/* ---------- Focus: a soft blue ring, only for keyboard ---------- */
+html body:not(.is-admin) #app :is(button,a,summary,[tabindex]):focus:not(:focus-visible){outline:none}
+html body:not(.is-admin) #app :is(button,a,summary,[tabindex]:not(input):not(select):not(textarea)):focus-visible{outline:none!important;box-shadow:var(--ui-ring)!important}
+html body:not(.is-admin) #app :is(.fleet-filters,#tripPicker) select.input:focus-visible{outline:none!important;box-shadow:var(--ui-tile-shadow),var(--ui-ring)!important}
+
+/* ---------- Text selection ---------- */
+html body:not(.is-admin) ::selection{background:rgba(0,113,227,.2)}
+
+@media (prefers-reduced-motion:reduce){
+ html body:not(.is-admin) #app :is(.btn,.chip,.cal-shortcuts>button,.signin-provider){transition:none!important;transform:none!important}
+}
+
+/* Section links on the tour page are plain chips (no blue outline) */
+html body:not(.is-admin) #app .tour-section-nav.tour-section-nav{gap:8px!important}
+html body:not(.is-admin) #app .tour-section-nav.tour-section-nav>a{text-decoration:none!important}
