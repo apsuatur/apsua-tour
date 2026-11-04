@@ -241,3 +241,187 @@ html body:not(.is-admin) #app .site-reviews-list{display:grid;gap:12px;grid-temp
 html body:not(.is-admin) #app .company-contact-sub{margin:16px 0 8px;font-size:15px;font-weight:600}
 html body:not(.is-admin) #app .company-contact .company-partner-contacts{display:grid;gap:8px;margin-bottom:16px}
 @media (max-width:760px){html body:not(.is-admin) #app #mapSide{scroll-margin-top:72px}}
+
+/* 27.1 — transfer request step by step (#trForm.trw). One question at a time; a single row of step icons on top
+   (answered steps show their answer and open on tap, «‹» goes back); choices move on by themselves; ticket at the end.
+   The site's generic button styles are overridden on purpose so the form's own controls keep one look. */
+html body:not(.is-admin) #app{--trw-accent:#ff8a00;--trw-ease:cubic-bezier(.2,.8,.2,1)}
+html body:not(.is-admin) #app .tr-layout.trw-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:0;max-width:720px}
+html body:not(.is-admin) #app .trw-layout #trPanel{padding:0!important;background:transparent!important;box-shadow:none!important;border:0!important;min-width:0}
+html body:not(.is-admin) #app #trRates.trw-aside{display:none!important}
+html body:not(.is-admin) #app #trForm.trw{display:grid;gap:14px;margin:0;padding:12px 16px 18px;background:var(--ui-surface);border-radius:22px;box-shadow:var(--ui-tile-shadow)}
+html body:not(.is-admin) #app .trw .request-draft-offer{margin:0}
+html body:not(.is-admin) #app .trw-ico{width:22px;height:22px;flex:none}
+html body:not(.is-admin) #app .trw-ico-accent{stroke:var(--trw-accent)}
+
+/* step strip */
+html body:not(.is-admin) #app .trw-strip{display:flex;align-items:center;gap:6px;min-width:0;margin:0 -16px;padding:0 16px 10px;border-bottom:1px solid var(--ui-line)}
+html body:not(.is-admin) #app .trw-back{display:grid;place-items:center;flex:none;width:34px!important;height:34px!important;min-height:34px!important;padding:0!important;color:var(--ui-ink)!important;background:var(--ui-fill)!important;border:0!important;border-radius:50%!important;box-shadow:none!important;cursor:pointer;transition:transform .12s ease}
+html body:not(.is-admin) #app .trw-back[hidden]{display:none!important}
+html body:not(.is-admin) #app .trw-back .trw-ico{width:18px;height:18px}
+html body:not(.is-admin) #app .trw-back:active{transform:scale(.9)}
+html body:not(.is-admin) #app .trw-steps{display:flex;align-items:center;gap:4px;min-width:0;flex:1;margin:0;padding:2px 0;list-style:none;overflow-x:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 18px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 18px),transparent)}
+html body:not(.is-admin) #app .trw-steps::-webkit-scrollbar{display:none}
+html body:not(.is-admin) #app .trw-steps li{flex:none;margin:0;padding:0}
+html body:not(.is-admin) #app .trw-chip{display:inline-flex;align-items:center;gap:5px;height:32px!important;min-height:32px!important;max-width:150px;padding:0 9px!important;font:inherit;font-size:13px!important;font-weight:500;line-height:1;white-space:nowrap;color:var(--ui-ink-2)!important;background:transparent!important;border:0!important;border-radius:999px!important;box-shadow:none!important}
+html body:not(.is-admin) #app .trw-chip>span{overflow:hidden;text-overflow:ellipsis}
+html body:not(.is-admin) #app .trw-chip .trw-ico{width:17px;height:17px}
+html body:not(.is-admin) #app .trw-chip.is-future{padding:0 6px!important;opacity:.45}
+html body:not(.is-admin) #app .trw-chip.is-future .trw-ico-accent{stroke:currentColor}
+html body:not(.is-admin) #app .trw-chip.is-done{color:var(--ui-ink)!important;background:var(--ui-fill)!important;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s ease,background-color .2s ease}
+html body:not(.is-admin) #app .trw-chip.is-done:active{transform:scale(.95);background:var(--ui-fill-press)!important}
+@media (hover:hover){html body:not(.is-admin) #app .trw-chip.is-done:hover{background:var(--ui-fill-press)!important;color:var(--ui-ink)!important}}
+html body:not(.is-admin) #app .trw-chip.is-current{color:var(--ui-blue)!important;background:var(--ui-blue-soft)!important;font-weight:600}
+html body:not(.is-admin) #app .trw-chip.is-current .trw-ico-accent{stroke:var(--ui-blue)}
+
+/* question */
+html body:not(.is-admin) #app .trw-step{display:grid;gap:10px;scroll-margin-top:80px}
+html body:not(.is-admin) #app .trw-step.is-entering{animation:trw-in .32s var(--trw-ease) both}
+html body:not(.is-admin) #app .trw-step.is-shake{animation:trw-shake .32s ease}
+@keyframes trw-in{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+@keyframes trw-shake{25%{transform:translateX(-5px)}50%{transform:translateX(4px)}75%{transform:translateX(-2px)}}
+html body:not(.is-admin) #app .trw-step h2{margin:0;font-family:var(--f-display,inherit);font-size:22px;line-height:1.15;letter-spacing:-.02em;font-weight:700;color:var(--ui-ink);outline:none}
+html body:not(.is-admin) #app .trw-caption{display:block;margin:-2px 0 0;font-size:12px;line-height:1.4;color:var(--ui-ink-2)}
+html body:not(.is-admin) #app .trw-group{display:grid;gap:6px;margin:0;padding:0;border:0;min-width:0}
+html body:not(.is-admin) #app .trw-group legend{padding:0;margin:0 0 6px;font-size:12px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--ui-ink-2)}
+html body:not(.is-admin) #app .trw-names{display:grid;gap:8px;margin:0;padding:0;border:0;min-width:0}
+
+/* choice tiles: icon on white, blue when chosen */
+html body:not(.is-admin) #app .trw-tiles{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr))}
+html body:not(.is-admin) #app .trw-tiles.is-two{grid-template-columns:repeat(2,minmax(0,1fr))}
+html body:not(.is-admin) #app .trw-tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:6px;width:100%;height:auto!important;min-height:0!important;padding:12px!important;text-align:left;font:inherit;color:var(--ui-ink)!important;background:var(--ui-surface)!important;border:0!important;border-radius:14px!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)!important;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:box-shadow .2s ease,background-color .2s ease,transform .12s ease}
+html body:not(.is-admin) #app .trw-tiles.is-compact .trw-tile{flex-direction:row;align-items:center;gap:8px;padding:9px 10px!important;border-radius:12px!important}
+html body:not(.is-admin) #app .trw-tile-ico{display:grid;place-items:center;flex:none;color:var(--ui-ink)}
+html body:not(.is-admin) #app .trw-tile-ico .trw-ico{width:28px;height:28px}
+html body:not(.is-admin) #app .trw-tiles.is-compact .trw-tile-ico .trw-ico{width:20px;height:20px}
+html body:not(.is-admin) #app .trw-tile-copy{display:grid;gap:2px;min-width:0;padding-right:16px}
+html body:not(.is-admin) #app .trw-tile b{font-size:15px;font-weight:600;line-height:1.2;letter-spacing:-.01em}
+html body:not(.is-admin) #app .trw-tiles.is-compact .trw-tile b{font-size:14px;font-weight:500}
+html body:not(.is-admin) #app .trw-tile small{font-size:12px;line-height:1.3;color:var(--ui-ink-2)}
+html body:not(.is-admin) #app .trw-tile em{font-style:normal;font-size:12px;font-weight:600;color:var(--ui-ink-2)}
+html body:not(.is-admin) #app .trw-tile-check{position:absolute;top:8px;right:8px;display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--ui-blue);color:#fff;opacity:0;transform:scale(.6);transition:opacity .2s ease,transform .3s var(--trw-ease)}
+html body:not(.is-admin) #app .trw-tile-check .trw-ico{width:12px;height:12px;stroke-width:2.8}
+html body:not(.is-admin) #app .trw-tiles.is-compact .trw-tile-check{top:50%;margin-top:-9px}
+html body:not(.is-admin) #app .trw-tile:not(:disabled):active{transform:scale(.97)}
+@media (hover:hover){html body:not(.is-admin) #app .trw-tile:not(:disabled):not([aria-checked=true]):hover{background:var(--ui-surface)!important;color:var(--ui-ink)!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.24)!important}}
+html body:not(.is-admin) #app .trw-tile[aria-checked=true]{color:var(--ui-ink)!important;background:var(--ui-blue-soft)!important;box-shadow:inset 0 0 0 2px var(--ui-blue)!important}
+html body:not(.is-admin) #app .trw-tile[aria-checked=true] .trw-tile-ico{color:var(--ui-blue)}
+html body:not(.is-admin) #app .trw-tile[aria-checked=true] .trw-tile-check{opacity:1;transform:none}
+html body:not(.is-admin) #app .trw-tile:disabled{cursor:not-allowed;opacity:.5;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)!important}
+
+/* fields */
+html body:not(.is-admin) #app #trForm.trw :is(input.input,textarea.input){width:100%;height:auto!important;max-height:none!important;min-height:46px!important;padding:11px 14px!important;font-size:16px!important;border-radius:12px!important}
+html body:not(.is-admin) #app #trForm.trw textarea.input{min-height:64px!important;resize:vertical;line-height:1.35}
+html body:not(.is-admin) #app .trw-field{display:grid;gap:4px;margin:0;min-width:0}
+html body:not(.is-admin) #app .trw-field>span{font-size:12px;font-weight:600;color:var(--ui-ink-2)}
+html body:not(.is-admin) #app .trw-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+html body:not(.is-admin) #app :is(.trw-date,.trw-time .time-btn){display:flex!important;align-items:center;justify-content:flex-start!important;gap:8px;width:100%;height:auto!important;max-height:none!important;min-height:46px!important;padding:0 12px!important;font:inherit;font-size:16px!important;text-align:left;color:var(--ui-ink)!important;background:var(--ui-surface)!important;border:0!important;border-radius:12px!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.14)!important;cursor:pointer}
+html body:not(.is-admin) #app .trw-date:not(.is-set){color:var(--ui-ink-2)!important}
+html body:not(.is-admin) #app .trw-date b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html body:not(.is-admin) #app .trw-date .trw-ico{width:18px;height:18px;color:var(--ui-ink)}
+html body:not(.is-admin) #app :is(.trw-date,.trw-time .time-btn)[aria-expanded=true],html body:not(.is-admin) #app .trw-date:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--ui-blue)!important}
+html body:not(.is-admin) #app .trw-inline-field{position:relative}
+html body:not(.is-admin) #app #trForm.trw .trw-inline-field input.input{padding-right:52px!important}
+html body:not(.is-admin) #app .trw-send{position:absolute;top:50%;right:6px;display:grid;place-items:center;width:34px!important;height:34px!important;min-height:34px!important;margin-top:-17px;padding:0!important;color:#fff!important;background:var(--ui-blue)!important;border:0!important;border-radius:50%!important;box-shadow:none!important;cursor:pointer;transition:transform .12s ease}
+html body:not(.is-admin) #app .trw-send .trw-ico{width:18px;height:18px}
+html body:not(.is-admin) #app .trw-send:active{transform:scale(.9)}
+html body:not(.is-admin) #app .trw-link{justify-self:start;min-height:32px!important;padding:0!important;font:inherit;font-size:14px;font-weight:500;color:var(--ui-blue)!important;background:none!important;border:0!important;box-shadow:none!important;cursor:pointer}
+html body:not(.is-admin) #app .trw-notice{display:flex;gap:8px;align-items:center;margin:0;padding:8px 12px;font-size:13px;line-height:1.35;color:#7a4b00;background:#fff4e0;border-radius:12px}
+html body:not(.is-admin) #app .trw-notice .trw-ico{width:18px;height:18px;color:#b86a00}
+html body:not(.is-admin) #app .trw-notice .trw-ico-accent{stroke:#b86a00}
+html body:not(.is-admin) #app :is(.trw-inline-error,.trw-error){margin:0;font-size:13px;line-height:1.35;color:var(--apple-red,#d70015)}
+html body:not(.is-admin) #app .trw-error:empty{display:none}
+
+/* rows: stepper, switch, messenger */
+html body:not(.is-admin) #app :is(.trw-switch,.trw-row-control){display:flex;align-items:center;gap:10px;width:100%;min-height:50px;height:auto!important;padding:6px 8px 6px 12px!important;text-align:left;font:inherit;color:var(--ui-ink)!important;background:var(--ui-fill)!important;border:0!important;border-radius:12px!important;box-shadow:none!important}
+html body:not(.is-admin) #app .trw-row-control.is-nested{background:var(--ui-blue-soft)!important}
+html body:not(.is-admin) #app .trw-switch{cursor:pointer;-webkit-tap-highlight-color:transparent}
+html body:not(.is-admin) #app .trw-switch-ico{display:grid;place-items:center;flex:none}
+html body:not(.is-admin) #app .trw-switch-ico .trw-ico{width:20px;height:20px}
+html body:not(.is-admin) #app :is(.trw-switch-copy,.trw-row-copy){display:grid;gap:1px;flex:1;min-width:0}
+html body:not(.is-admin) #app :is(.trw-switch-copy,.trw-row-copy) b{font-size:15px;font-weight:500}
+html body:not(.is-admin) #app :is(.trw-switch-copy,.trw-row-copy) small{font-size:12px;color:var(--ui-ink-2)}
+html body:not(.is-admin) #app .trw-switch-knob{position:relative;width:46px;height:28px;margin-right:2px;border-radius:999px;background:rgba(120,120,128,.24);flex:none;transition:background-color .25s ease}
+html body:not(.is-admin) #app .trw-switch-knob::after{content:'';position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.15),0 1px 1px rgba(0,0,0,.16);transition:transform .3s var(--trw-ease)}
+html body:not(.is-admin) #app .trw-switch[aria-checked=true] .trw-switch-knob{background:#34c759}
+html body:not(.is-admin) #app .trw-switch[aria-checked=true] .trw-switch-knob::after{transform:translateX(18px)}
+html body:not(.is-admin) #app .trw-stepper{display:flex;align-items:center;gap:2px;flex:none}
+html body:not(.is-admin) #app .trw-stepper button{display:grid;place-items:center;width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;padding:0!important;font:inherit;font-size:20px;line-height:1;color:var(--ui-blue)!important;background:var(--ui-surface)!important;border:0!important;border-radius:50%!important;box-shadow:0 0 0 .5px rgba(0,0,0,.1),0 1px 3px rgba(0,0,0,.06)!important;cursor:pointer;transition:transform .12s ease}
+html body:not(.is-admin) #app .trw-stepper button:active{transform:scale(.9)}
+html body:not(.is-admin) #app .trw-stepper button:disabled{color:var(--ui-ink-2)!important;opacity:.45;cursor:default}
+html body:not(.is-admin) #app .trw-stepper output{min-width:28px;text-align:center;font-size:17px;font-weight:600}
+html body:not(.is-admin) #app .trw-seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;padding:2px;background:var(--ui-fill);border-radius:11px}
+html body:not(.is-admin) #app .trw-seg button{min-height:36px!important;height:auto!important;padding:0!important;font:inherit;font-size:14px;font-weight:500;color:var(--ui-ink)!important;background:transparent!important;border:0!important;border-radius:9px!important;box-shadow:none!important;cursor:pointer;transition:background-color .2s ease,box-shadow .2s ease}
+html body:not(.is-admin) #app .trw-seg button[aria-checked=true]{background:var(--ui-surface)!important;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.04)!important}
+
+/* total + small «go» pill (only on steps with several fields) */
+html body:not(.is-admin) #app .trw-total{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:2px 0 0;font-size:13px;color:var(--ui-ink-2)}
+html body:not(.is-admin) #app .trw-total b{font-size:17px;color:var(--ui-ink)}
+html body:not(.is-admin) #app .trw-actions{display:flex;justify-content:flex-end}
+html body:not(.is-admin) #app .trw-go{display:inline-flex;align-items:center;gap:6px;min-height:40px!important;height:auto!important;padding:0 16px!important;font:inherit;font-size:15px!important;font-weight:600;color:#fff!important;background:var(--ui-blue)!important;border:0!important;border-radius:999px!important;box-shadow:none!important;cursor:pointer;transition:transform .12s ease,background-color .2s ease}
+html body:not(.is-admin) #app .trw-go .trw-ico{width:16px;height:16px}
+html body:not(.is-admin) #app .trw-go:active{transform:scale(.96);background:var(--ui-blue-press)!important}
+html body:not(.is-admin) #app :is(.trw-tile,.trw-chip,.trw-back,.trw-send,.trw-go,.trw-switch,.trw-seg button,.trw-stepper button,.trw-edit):focus-visible{outline:none;box-shadow:var(--ui-ring)!important}
+
+/* ticket (owner's mock-up): dark header, one short row per answer with a pencil, total */
+html body:not(.is-admin) #app .trw-ticket{overflow:hidden;background:#fafbf9;border-radius:16px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+html body:not(.is-admin) #app .trw-thead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 12px 12px 16px;background:var(--ui-ink);color:#fff}
+html body:not(.is-admin) #app .trw-thead small{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.62)}
+html body:not(.is-admin) #app .trw-thead strong{display:block;margin-top:2px;font-size:16px;line-height:1.25;font-weight:600}
+html body:not(.is-admin) #app .trw-trow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 8px 8px 16px;border-bottom:1px solid var(--ui-line)}
+html body:not(.is-admin) #app .trw-trow>div{display:grid;gap:1px;min-width:0;font-size:14px;line-height:1.3}
+html body:not(.is-admin) #app .trw-trow small{font-size:11px;color:var(--ui-ink-2)}
+html body:not(.is-admin) #app .trw-trow span{color:var(--ui-ink);font-weight:500;overflow-wrap:anywhere}
+html body:not(.is-admin) #app .trw-trow em{font-style:normal;font-size:12px;color:var(--ui-ink-2)}
+html body:not(.is-admin) #app .trw-edit{display:grid;place-items:center;flex:none;width:32px!important;height:32px!important;min-height:32px!important;padding:0!important;color:var(--ui-blue)!important;background:transparent!important;border:0!important;border-radius:50%!important;box-shadow:none!important;cursor:pointer;transition:transform .12s ease,background-color .2s ease}
+html body:not(.is-admin) #app .trw-edit .trw-ico{width:16px;height:16px}
+html body:not(.is-admin) #app .trw-edit:active{transform:scale(.9);background:var(--ui-blue-soft)!important}
+html body:not(.is-admin) #app .trw-edit.is-dark{color:#fff!important}
+html body:not(.is-admin) #app .trw-edit.is-dark:active{background:rgba(255,255,255,.16)!important}
+html body:not(.is-admin) #app .trw-tfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-top:2px dashed rgba(0,0,0,.12);margin-top:-1px}
+html body:not(.is-admin) #app .trw-tfoot div{display:grid;gap:1px;font-size:14px;font-weight:500}
+html body:not(.is-admin) #app .trw-tfoot small{font-size:11px;font-weight:400;color:var(--ui-ink-2)}
+html body:not(.is-admin) #app .trw-tfoot b{font-size:20px;letter-spacing:-.01em;white-space:nowrap}
+html body:not(.is-admin) #app .trw-consent{margin:0;font-size:13px}
+html body:not(.is-admin) #app .trw-submit{min-height:48px!important}
+
+/* sent */
+html body:not(.is-admin) #app .trw-done{display:grid;justify-items:center;gap:8px;padding:24px 16px 20px;text-align:center;background:var(--ui-surface);border-radius:22px;box-shadow:var(--ui-tile-shadow);animation:trw-in .35s var(--trw-ease) both}
+html body:not(.is-admin) #app .trw-seal{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:#34c759;color:#fff;animation:trw-pop .45s var(--trw-ease) both}
+html body:not(.is-admin) #app .trw-seal .trw-ico{width:28px;height:28px;stroke-width:2.4}
+@keyframes trw-pop{from{transform:scale(.5);opacity:0}to{transform:none;opacity:1}}
+html body:not(.is-admin) #app .trw-done h2{margin:2px 0 0;font-size:22px;letter-spacing:-.02em;outline:none}
+html body:not(.is-admin) #app .trw-done .code{font-size:14px;font-weight:600;color:var(--ui-blue)}
+html body:not(.is-admin) #app .trw-done-summary{display:grid;gap:2px;margin:4px 0 0;font-size:14px}
+html body:not(.is-admin) #app .trw-done-summary>span{color:var(--ui-ink-2)}
+html body:not(.is-admin) #app .trw-done .trw-caption{max-width:420px;margin:0}
+html body:not(.is-admin) #app .trw-done-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:6px}
+html body:not(.is-admin) #app .trw-done-actions .btn{min-height:40px!important;gap:6px!important}
+html body:not(.is-admin) #app .trw-done-actions .trw-ico{width:18px;height:18px}
+html body:not(.is-admin) #app .trw-done-actions .btn-accent .trw-ico-accent{stroke:#fff}
+
+@media (min-width:641px){
+ html body:not(.is-admin) #app #trForm.trw{padding:16px 22px 22px}
+ html body:not(.is-admin) #app .trw-strip{margin:0 -22px;padding:0 22px 12px}
+ html body:not(.is-admin) #app .trw-step h2{font-size:26px}
+}
+@media (prefers-reduced-motion:reduce){
+ html body:not(.is-admin) #app :is(.trw-step.is-entering,.trw-done,.trw-seal){animation:trw-fade .2s ease both!important}
+ html body:not(.is-admin) #app .trw-step.is-shake{animation:none}
+ html body:not(.is-admin) #app :is(.trw-tile,.trw-chip,.trw-back,.trw-send,.trw-go,.trw-edit,.trw-stepper button):active{transform:none}
+ html body:not(.is-admin) #app .trw-tile-check,html body:not(.is-admin) #app .trw-switch-knob::after{transition-duration:.01s}
+}
+@keyframes trw-fade{from{opacity:0}to{opacity:1}}
+@media (prefers-contrast:more){html body:not(.is-admin) #app :is(.trw-tile,.trw-switch,.trw-row-control,.trw-ticket){box-shadow:inset 0 0 0 1px rgba(0,0,0,.45)!important}}
+/* step strip: icons only, all in one row */
+html body:not(.is-admin) #app .trw-steps{justify-content:space-between;gap:2px;-webkit-mask-image:none;mask-image:none}
+html body:not(.is-admin) #app .trw-chip{justify-content:center;width:32px!important;height:32px!important;min-height:32px!important;padding:0!important;border-radius:50%!important}
+html body:not(.is-admin) #app .trw-chip.is-future{padding:0!important;opacity:.32}
+html body:not(.is-admin) #app .trw-chip.is-current{color:#fff!important;background:var(--ui-blue)!important;box-shadow:0 2px 8px rgba(0,113,227,.3)!important}
+html body:not(.is-admin) #app .trw-chip.is-current .trw-ico-accent{stroke:#fff}
+html body:not(.is-admin) #app .trw-chip.is-done{color:var(--ui-ink)!important;background:var(--ui-fill)!important}
+html body:not(.is-admin) #app .trw-chip .trw-ico{width:16px;height:16px}
+@media (max-width:640px){html body:not(.is-admin) #app .wrap:has(.trw-layout) .page-head p{display:none}}
+/* computer: the form and its heading sit in one centred column */
+html body:not(.is-admin) #app .tr-layout.trw-layout{margin-inline:auto}
+html body:not(.is-admin) #app .wrap:has(.trw-layout) .page-head{max-width:720px;margin-inline:auto}
