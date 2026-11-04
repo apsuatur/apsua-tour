@@ -2878,5 +2878,23 @@ const transferBeforeAccountPreferences=renderTransfer;renderTransfer=function(..
 
 document.addEventListener('click',event=>{const button=event.target.closest?.('[data-yandex-login]');if(!button)return;event.preventDefault();rememberTelegramPage();const back=safeTelegramReturn(routeHash()||'#/');location.href='/api/yandex-auth/start?return_to='+encodeURIComponent(back)},true);
 
+/* 26.2 — tour page on phones: price and «Выбрать дату» right under the title, booking before the long programme,
+   programme folded to four stops, and the floating back button steps aside while the page scrolls down. */
+const TOUR_PROGRAM_VISIBLE=4;
+function tourQuickBookHTML(){return `<div class="tour-quick-book"><div class="tour-quick-copy"><b class="tour-quick-price num">${esc(bookingPriceLabel())}</b><small>Места и время подтвердит диспетчер</small></div><button class="btn btn-accent" type="button" data-tour-anchor="booking">Выбрать дату</button></div>`}
+function tourProgramLabel(count){return `Вся программа · ${count} ${plural(count,'пункт','пункта','пунктов')}`}
+function tourProgramFold(){const section=$('#tour-program'),items=section?$$('.timeline>li',section):[];if(!section||items.length<=TOUR_PROGRAM_VISIBLE||section.querySelector('[data-program-toggle]'))return;section.classList.add('is-folded');section.querySelector('.timeline')?.insertAdjacentHTML('afterend',`<button class="btn btn-ghost small tour-program-toggle" type="button" data-program-toggle aria-expanded="false">${tourProgramLabel(items.length)}</button>`)}
+function enhanceTourPage(){const page=$('.tour-page');if(!page||!bk)return;
+ const head=page.querySelector('.tour-head');if(head&&!page.querySelector('.tour-quick-book'))head.insertAdjacentHTML('afterend',tourQuickBookHTML());
+ const nav=page.querySelector('.tour-section-nav');if(nav&&!nav.querySelector('[data-tour-anchor="booking"]'))nav.insertAdjacentHTML('afterbegin','<a href="#booking" class="tour-nav-booking" data-tour-anchor="booking">Бронирование</a>');
+ page.querySelector('.tour-main>.comfort-panel')?.classList.add('tour-pretrip');
+ tourProgramFold()}
+const tourViewBeforeQuickBook=tourView;tourView=function(...args){const result=tourViewBeforeQuickBook.apply(this,args);enhanceTourPage();return result};
+const renderBookingBeforeQuickBook=renderBooking;renderBooking=function(...args){const result=renderBookingBeforeQuickBook.apply(this,args);const price=$('.tour-quick-price');if(price&&bk)price.textContent=bookingPriceLabel();return result};
+document.addEventListener('click',e=>{const toggle=e.target.closest?.('[data-program-toggle]');if(!toggle)return;const section=toggle.closest('#tour-program');if(!section)return;const open=!section.classList.toggle('is-folded');toggle.setAttribute('aria-expanded',String(open));toggle.textContent=open?'Свернуть программу':tourProgramLabel($$('.timeline>li',section).length);if(!open)section.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})});
+let floatingBackLastY=window.scrollY||0;
+window.addEventListener('scroll',()=>{const control=document.querySelector('.floating-page-back'),y=window.scrollY||0;if(control&&Math.abs(y-floatingBackLastY)>6){control.classList.toggle('is-away',y>floatingBackLastY&&y>160);floatingBackLastY=y}},{passive:true});
+window.addEventListener('hashchange',()=>{floatingBackLastY=0;document.querySelector('.floating-page-back')?.classList.remove('is-away')});
+
 hostedBoot();
 })();
