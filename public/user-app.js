@@ -952,7 +952,7 @@ function route(){
   current='transfer';tr.step='form';transferView();
   if(landing){const h=$('h1',app);if(h)h.textContent=landing.title;app.insertAdjacentHTML('beforeend',searchMoreHTML('Подробнее о маршруте',landing.body))}
   else if(search)app.insertAdjacentHTML('beforeend',searchMoreHTML('Подробнее о трансфере',search.transferOverview(C)));
-  trwMountHelp();
+  if(typeof trwMountHelp==="function")trwMountHelp();
   setNav('transfer');top();return
  }
  if(p0==='excursions-from'){
