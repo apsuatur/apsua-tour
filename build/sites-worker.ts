@@ -24,6 +24,7 @@ export default {
       request = new Request(request, { headers: safeHeaders });
     }
     const path=new URL(request.url).pathname;
+    if(['GET','HEAD'].includes(request.method)&&path==='/yandex_b0ca4a0e8cb79573.html')return new Response(request.method==='HEAD'?null:'<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>Verification: b0ca4a0e8cb79573</body></html>',{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}});
     const asset=installationAsset(request);if(asset)return asset;
     if(path.startsWith('/api/'))return siteAPI(request,env as any,ctx);
     if(['GET','HEAD'].includes(request.method)&&(path==='/robots.txt'||path==='/sitemap.xml'))return seoFile(request,env as any);
