@@ -183,3 +183,33 @@ html body:not(.is-admin) #app #trForm .total{display:none!important}
 html body:not(.is-admin) #app .transfer-kind-field.is-single .transfer-kind{grid-template-columns:minmax(0,1fr)!important}
 html body:not(.is-admin) #app .transfer-kind-field.is-single .transfer-kind>label.is-disabled{display:none!important}
 html body:not(.is-admin) #app .transfer-kind-note{margin:6px 2px 0;font-size:13px;color:var(--muted)}
+
+/* 26.6 — account on phones: next trip, notifications row, one list of sections; empty requests page. */
+html body:not(.is-admin) #app .account-phone-home{display:none}
+@media (max-width:700px){
+ html body:not(.is-admin) #app .account-phone-home{display:grid;gap:12px}
+ html body:not(.is-admin) #app :is(.account-dashboard-hero,.account-dashboard-mobile,#myTripOrders,.account-useful){display:none!important}
+ html body:not(.is-admin) #app .account-next{display:grid;gap:4px;padding:16px;border-radius:18px;background:var(--ui-surface)}
+ html body:not(.is-admin) #app .account-next>small{font-size:13px;font-weight:600;color:var(--muted)}
+ html body:not(.is-admin) #app .account-phone-home .account-next-title.account-next-title{display:block!important;justify-self:start;min-height:0!important;padding:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;font-size:20px!important;font-weight:650!important;line-height:1.2!important;letter-spacing:-.01em;color:var(--ui-ink)!important;text-align:left;cursor:pointer}
+ html body:not(.is-admin) #app .account-next-date{font-size:15px;color:var(--ui-ink)}
+ html body:not(.is-admin) #app .account-next p{margin:4px 0 0;font-size:14px;line-height:1.4;color:var(--muted)}
+ html body:not(.is-admin) #app .account-next-all{justify-self:start;margin-top:6px;font-size:15px;font-weight:600;color:var(--ui-blue);text-decoration:none}
+ html body:not(.is-admin) #app .account-next.is-empty b{font-size:17px}
+ html body:not(.is-admin) #app .account-next-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+ html body:not(.is-admin) #app .account-push-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 12px 12px 16px;border-radius:18px;background:var(--ui-blue-soft)}
+ html body:not(.is-admin) #app .account-push-row>span{display:grid;gap:2px;min-width:0}
+ html body:not(.is-admin) #app .account-push-row small{font-size:13px;color:var(--muted)}
+ html body:not(.is-admin) #app .account-push-row .btn{flex:none}
+ html body:not(.is-admin) #app .account-list{display:grid;border-radius:18px;overflow:hidden;background:var(--ui-surface)}
+ html body:not(.is-admin) #app .account-list .account-row{display:flex!important;align-items:center;gap:10px;width:100%;min-height:50px;padding:0 16px!important;border:0!important;border-radius:0!important;border-top:1px solid var(--ui-line)!important;background:transparent!important;box-shadow:none!important;color:var(--ui-ink)!important;font:inherit;font-size:16px!important;font-weight:400!important;text-align:left;text-decoration:none;justify-content:flex-start!important}
+ html body:not(.is-admin) #app .account-list .account-row:first-child{border-top:0!important}
+ html body:not(.is-admin) #app .account-list .account-row>span{flex:1 1 auto!important;min-width:0;text-align:left}
+ html body:not(.is-admin) #app .account-list .account-row>:is(i,.account-row-chevron){flex:none!important}
+ html body:not(.is-admin) #app .account-list .account-row>i{font-style:normal;color:var(--muted)}
+ html body:not(.is-admin) #app .account-list .account-row-chevron{color:var(--ui-chevron,#c4c4c7);font-size:20px;line-height:1}
+ html body:not(.is-admin) #app .account-list .account-row.is-danger{color:#d70015!important}
+ html body:not(.is-admin) #app .account-list .account-row:active{background:var(--ui-fill-press,rgba(0,0,0,.06))!important}
+}
+html body:not(.is-admin) #app .orders-page.is-empty :is(.orders-page-tools,.orders-type-filter,[data-refresh-customer-orders]){display:none!important}
+html body:not(.is-admin) #app .orders-page.is-empty .orders-empty{display:grid;justify-items:center;gap:10px}
