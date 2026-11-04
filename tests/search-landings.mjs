@@ -52,7 +52,8 @@ console.log('PASS: seasonal listing prices agree with the booking server across 
  console.log('PASS: catalogue filters stay in one row on the phone: Цена, формат, сортировка.')}
 // Plain lists (fleet, trip picker, tour booking) open in the shared window; the real <select> stays for the form.
 {assert.ok(src.includes("const SHEET_SELECTS='.fleet-filters select.input,#tripPicker select.input,#booking select.input,#trForm #tr-from,#trForm #tr-to',SHEET_TIMES='#trForm input[type=time]'"),'transfer «Откуда», «Куда» and «Время» use the shared window');
- assert.ok(src.includes("if(k==='time'){")&&src.includes('data-pick-hour')&&src.includes('data-pick-minute')&&src.includes('data-time-done'),'time window has hours, minutes and «Готово»');
+ assert.ok(src.includes("if(k==='time'){")&&src.includes("col('h',24")&&src.includes("col('m',60")&&src.includes('data-time-done'),'time window has an hour wheel, a minute wheel (every minute) and «Готово»');
+ assert.ok(src.includes('function setupTimeWheels(el)')&&src.includes('ArrowUp:-1,ArrowDown:1'),'wheels snap, scroll and answer the arrow keys');
  assert.match(src,/input\.value=value;input\.dispatchEvent\(new Event\('input',\{bubbles:true\}\)\);input\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/,'the hidden time field gets the value and the usual change event');
  assert.ok(src.includes("if(k==='select'){")&&src.includes('data-pick-option'),'option window is drawn');
  assert.match(src,/sel\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/,'choosing an option fires change like the native list');
