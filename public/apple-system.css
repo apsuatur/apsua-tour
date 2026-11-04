@@ -452,3 +452,27 @@ html body #app .catalog-price .price-sheet-head small{text-wrap:balance;color:va
 html body:not(.is-admin) #app .acc-admin-link{color:#fff!important;background:#ff9500!important;border:0!important;box-shadow:none!important}
 @media (hover:hover){html body:not(.is-admin) #app .acc-admin-link:hover{background:#f08a00!important}}
 html body:not(.is-admin) #app .acc-admin-link:active{transform:scale(.97)}
+/* 27.3 — transfer places: one grouped list, rows with a hairline between them and a blue check on the chosen one */
+html body:not(.is-admin) #app .trw-list{display:grid;margin:0;padding:0;overflow:hidden;background:var(--ui-surface);border-radius:14px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+html body:not(.is-admin) #app .trw-row{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:46px;margin:0;padding:0 14px!important;text-align:left;font:inherit;color:var(--ui-ink)!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background-color .15s ease}
+html body:not(.is-admin) #app .trw-row[hidden]{display:none}
+html body:not(.is-admin) #app .trw-row+.trw-row::before{content:"";position:absolute;top:0;left:46px;right:0;height:1px;background:rgba(0,0,0,.08)}
+html body:not(.is-admin) #app .trw-row:active{background:rgba(0,0,0,.05)!important;transition-duration:0s}
+@media (hover:hover){html body:not(.is-admin) #app .trw-row:hover{background:rgba(0,0,0,.03)!important}}
+html body:not(.is-admin) #app .trw-row-ico{display:grid;place-items:center;flex:none;width:20px;color:var(--ui-ink-2)}
+html body:not(.is-admin) #app .trw-row-ico .trw-ico{width:20px;height:20px}
+html body:not(.is-admin) #app .trw-row b{flex:1;min-width:0;font-size:16px;font-weight:400;line-height:1.25;letter-spacing:-.01em}
+html body:not(.is-admin) #app .trw-row em{flex:none;font-style:normal;font-size:14px;color:var(--ui-ink-2)}
+html body:not(.is-admin) #app .trw-row-check{display:grid;place-items:center;flex:none;width:20px;height:20px;color:var(--ui-blue);opacity:0;transform:scale(.6);transition:opacity .2s ease,transform .25s cubic-bezier(.2,.9,.3,1.2)}
+html body:not(.is-admin) #app .trw-row-check .trw-ico{width:18px;height:18px;stroke-width:2.6}
+html body:not(.is-admin) #app .trw-row[aria-checked=true] .trw-row-check{opacity:1;transform:none}
+html body:not(.is-admin) #app .trw-row[aria-checked=true] .trw-row-ico{color:var(--ui-blue)}
+html body:not(.is-admin) #app .trw-row[aria-checked=true] b{font-weight:600}
+html body:not(.is-admin) #app .trw-row:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--ui-blue)!important}
+html body:not(.is-admin) #app .trw-row.is-first-shown::before{display:none}
+html body:not(.is-admin) #app #trForm.trw input.input.trw-filter{height:40px!important;min-height:40px!important;margin:0 0 6px!important;padding:0 12px!important;font-size:16px!important;border-radius:10px!important;background:var(--ui-fill,rgba(118,118,128,.12))!important;border:0!important;box-shadow:none!important}
+html body:not(.is-admin) #app #trForm.trw input.input.trw-filter:focus{box-shadow:inset 0 0 0 2px var(--ui-blue)!important}
+html body:not(.is-admin) #app .trw-filter-empty{margin:6px 2px 0;font-size:13px;line-height:1.4;color:var(--ui-ink-2)}
+@media (prefers-reduced-motion:reduce){html body:not(.is-admin) #app .trw-row-check{transition-duration:.01s;transform:none}}
+@media (prefers-contrast:more){html body:not(.is-admin) #app .trw-list{box-shadow:inset 0 0 0 1px rgba(0,0,0,.45)}}
+html body:not(.is-admin) #app #trForm.trw input.input.trw-filter{padding-left:34px!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238e8e93' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:11px 50%!important}
