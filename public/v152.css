@@ -1224,3 +1224,10 @@ html body #app .search-more-body ul:has(>li>h3)>li{margin:0;padding:12px 0;borde
 html body #app .search-more-body ul:has(>li>h3) a{text-decoration:none}
 html body #app .search-more-body>p:last-child{margin-top:14px;font-size:14px}
 @media(prefers-reduced-motion:reduce){html body #app .search-more>summary::after{transition:none}}
+
+/* 25.7 — catalogue filters in one row on the phone: Цена · Все форматы · Популярные.
+   An old rule (v134) stretched «Цена» across the whole row and pushed the rest down. */
+@media(max-width:700px){
+html body #app .catalog-compact-toolbar .catalog-selects{display:grid!important;grid-template-columns:minmax(0,70fr) minmax(0,144fr) minmax(0,128fr)!important;gap:6px!important;flex-wrap:nowrap!important}
+html body #app .catalog-compact-toolbar .catalog-selects>*{grid-column:auto!important;grid-row:1!important;width:auto!important;min-width:0!important;margin:0!important}
+}
