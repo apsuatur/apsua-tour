@@ -551,10 +551,9 @@ html body #app .trw-help-fab:focus-visible{outline:3px solid rgba(0,113,227,.45)
  html body:not(.is-admin) #app .v4-steps-sec .v4-steps>li strong{margin-top:0!important;font-size:14px;line-height:1.25;letter-spacing:-.01em}
  html body:not(.is-admin) #app .v4-steps-sec .v4-steps>li span{margin-top:0!important;font-size:12px;line-height:1.3;text-wrap:balance}
 }
-/* 27.5 — the steps read in order: a small grey number over each title, faint chevrons between the tiles (1 › 2, 3 › 4) */
+/* 27.5 — the steps read in order: faint chevrons centred in the gap between the tiles (1 › 2, 3 › 4) */
 @media (max-width:760px){
- html body:not(.is-admin) #app .v4-steps-sec .v4-steps{counter-reset:v4step;column-gap:18px!important;row-gap:8px!important}
- html body:not(.is-admin) #app .v4-steps-sec .v4-steps>li{position:relative;overflow:visible;counter-increment:v4step}
- html body:not(.is-admin) #app .v4-steps-sec .v4-steps>li strong::before{content:counter(v4step);display:block;margin:0 auto 2px;font-size:11px;font-weight:600;line-height:14px;color:rgba(60,60,67,.45)}
- html body:not(.is-admin) #app .v4-steps-sec .v4-steps>li:nth-child(odd)::after{content:"";position:absolute;top:50%;right:-13px;width:7px;height:7px;margin-top:-4px;border-top:1.5px solid rgba(60,60,67,.28);border-right:1.5px solid rgba(60,60,67,.28);transform:rotate(45deg)}
+ html body:not(.is-admin) #app .v4-steps-sec .v4-steps{column-gap:18px!important;row-gap:8px!important}
+ html body:not(.is-admin) #app .v4-steps-sec .v4-steps>li{position:relative;overflow:visible}
+ html body:not(.is-admin) #app .v4-steps-sec .v4-steps>li:nth-child(odd)::after{content:"";position:absolute;top:50%;right:-10px;width:7px;height:7px;margin-top:-4px;border-top:1.5px solid rgba(60,60,67,.28);border-right:1.5px solid rgba(60,60,67,.28);transform:rotate(45deg)}
 }
