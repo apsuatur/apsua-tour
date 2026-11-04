@@ -6,6 +6,7 @@ import {createHash,generateKeyPairSync,createECDH,randomBytes} from 'node:crypto
 import ts from 'typescript';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const source=read('lib/site-api.ts')
+ .replace("import '../public/search-pages.js';",read('public/search-pages.js'))
  .replace("import '../public/fleet-model.js';",read('public/fleet-model.js'))
  .replace("import { dispatchPayload, normalizeDispatchUpdate, sendToDispatcher, verifyDispatchWebhook } from './dispatch';",read('lib/dispatch.ts').replace(/export /g,''))
  .replace("import { orderNotification } from './order-notify';",read('lib/order-notify.ts').replace(/export /g,''))

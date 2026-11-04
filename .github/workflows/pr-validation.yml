@@ -156,3 +156,9 @@ jobs:
       - name: node tests/deployment-shell.mjs
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: node tests/deployment-shell.mjs
+
+      - name: Public URL and search landing checks
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: |
+          node tests/public-urls-seo.mjs
+          node tests/search-landings.mjs

@@ -4,6 +4,7 @@ import {DatabaseSync} from 'node:sqlite';
 import ts from 'typescript';
 import {createHash} from 'node:crypto';
 const source=readFileSync(new URL('../lib/site-api.ts',import.meta.url),'utf8')
+ .replace("import '../public/search-pages.js';",readFileSync(new URL('../public/search-pages.js',import.meta.url),'utf8'))
  .replace("import '../public/fleet-model.js';",readFileSync(new URL('../public/fleet-model.js',import.meta.url),'utf8'))
  .replace("import { dispatchPayload, normalizeDispatchUpdate, sendToDispatcher, verifyDispatchWebhook } from './dispatch';",readFileSync(new URL('../lib/dispatch.ts',import.meta.url),'utf8').replace(/export /g,''))
  .replace("import { orderNotification } from './order-notify';",readFileSync(new URL('../lib/order-notify.ts',import.meta.url),'utf8').replace(/export /g,''))

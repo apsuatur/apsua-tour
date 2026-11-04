@@ -4,7 +4,7 @@
 
 /* Public URLs share the server's canonical paths. Private admin keeps its draft guards. */
 function routeHash(url=location){
- if(url.hash && (/^#\//.test(url.hash)||/^#(?:tour-|home$|catalog$|transfer$|map$|reviews$|diary$|favorites$|account$|popular$|install$|admin$)/.test(url.hash)))return url.hash;
+ if(url.hash && (/^#\//.test(url.hash)||/^#(?:tour-|home$|catalog$|transfer(?:\/|$)|excursions-from\/|map$|reviews$|diary$|favorites$|account$|popular$|install$|admin$)/.test(url.hash)))return url.hash;
  const path=url.pathname.replace(/\/$/,'')||'/';
  const mapped=path.replace(/^\/tour\//,'/excursions/').replace(/^\/catalog(?=\/|$)/,'/excursions').replace(/^\/journal(?=\/|$)/,'/diary').replace(/^\/administrator(?=\/|$)/,'/admin');
  return '#'+(mapped==='/index.html'?'/':mapped)+(url.search||'');
@@ -31,7 +31,7 @@ new MutationObserver(records=>{for(const r of records){if(r.type==='attributes')
 publicLinks();
 document.addEventListener('click',e=>{
  const a=e.target.closest?.('a[href]');if(!a||e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||a.target||a.hasAttribute('download')||/^#\/admin(?:[/?]|$)/.test(routeHash()))return;
- const u=new URL(a.href,location.href);if(u.origin!==location.origin||u.hash||!/^\/(?:$|catalog(?:[/?]|$)|tour\/|transfer$|map$|reviews$|journal(?:\/|$)|useful(?:\/|$)|faq$|fleet$|about$|contacts$|orders$|account$|favorites$|compare$|pick$|install$)/.test(u.pathname))return;
+ const u=new URL(a.href,location.href);if(u.origin!==location.origin||u.hash||!/^\/(?:$|catalog(?:[/?]|$)|tour\/|transfer(?:\/|$)|excursions-from\/|map$|reviews$|journal(?:\/|$)|useful(?:\/|$)|faq$|fleet$|about$|contacts$|orders$|account$|favorites$|compare$|pick$|install$)/.test(u.pathname))return;
  if(u.pathname==='/account'&&!serverIdentity&&serverTelegramAuth.enabled)return;
  if(u.pathname==='/faq'&&current==='home'&&$('#faq')){e.preventDefault();v17CloseMenu(true);v17ScrollToFaq(true);history.replaceState(history.state,'','/faq');routePreviousURL=location.href;return}
  e.preventDefault();const hash=routeHash(u);if(hash===routeHash())return;location.hash=hash;
@@ -913,9 +913,24 @@ function route(){
  const top=()=>{const y=uxPrevious==='tour'&&uxScrollPositions.has(uxDestination)?uxScrollPositions.get(uxDestination):0;scrollTo(0,y);updateCustomerOrdersBanner();if(y)requestAnimationFrame(()=>scrollTo(0,y))};
  if(p0==='fleet'){fleetPage();return}if(['about','contacts','contact'].includes(p0)){aboutFleetPage();return}if(p0==='orders'){current='orders';ordersView();setNav('account');top();return}if(p0==='compare'){compareView();top();return}if(p0==='pick'){pickerView();top();return}
  if(p0==='excursions'&&parts[1]){if(q.city||q.date){ui.q.city=String(q.city||'');ui.q.date=/^\d{4}-\d\d-\d\d$/.test(q.date||'')?q.date:''}current='tour';tourView(parts[1]);setNav('catalog');top();return}
- if(p0==='excursions'){applyQ(q);current='catalog';catalogView(false);setNav('catalog');top();return}
+ if(p0==='excursions'){applyQ(q);current='catalog';catalogView(false);if(window.ApsuaSearchPages)app.insertAdjacentHTML('beforeend','<section class="wrap section prose" data-search-content>'+window.ApsuaSearchPages.excursionOverview(C)+'</section>');setNav('catalog');top();return}
  if(p0==='favorites'){current='favorites';catalogView(true);setNav('favorites');top();return}
- if(p0==='transfer'){current='transfer';tr.step='form';transferView();setNav('transfer');top();return}
+ if(p0==='transfer'){
+  const search=window.ApsuaSearchPages,landing=parts[1]&&search?.resolve('/transfer/'+parts[1],C);
+  if(parts[1]&&!landing){app.innerHTML='<div class="wrap section"><h1>Маршрут не найден</h1><a href="/transfer">Все трансферы</a></div>';top();return}
+  const from=landing?.from||q.from,to=landing?.to||q.to;
+  if(C.transfer.from.some(x=>x.id===from))tr.from=from;
+  if(C.transfer.to.some(x=>x.id===to)){if(tr.to!==to){tr.hotel='';tr.address=''}tr.to=to;}
+  if(landing)tr.direction='arrival';
+  current='transfer';tr.step='form';transferView();
+  if(landing){const h=$('h1',app);if(h)h.textContent=landing.title;app.insertAdjacentHTML('beforeend','<section class="wrap section prose" data-search-content>'+landing.body+'</section>')}
+  else if(search)app.insertAdjacentHTML('beforeend','<section class="wrap section prose" data-search-content>'+search.transferOverview(C)+'</section>');
+  setNav('transfer');top();return
+ }
+ if(p0==='excursions-from'){
+  const landing=window.ApsuaSearchPages?.resolve('/excursions-from/'+parts[1],C);current='catalog';
+  app.innerHTML=landing?'<article class="wrap section prose" data-search-content><h1>'+esc(landing.title)+'</h1>'+landing.body+'</article>':'<div class="wrap section"><h1>Направление не найдено</h1><a href="/catalog">Все экскурсии</a></div>';setNav('catalog');top();return
+ }
  if(p0==='map'){current='map';mapView();setNav('map');top();return}
  if(p0==='reviews'){current='reviews';reviewsView();setNav('reviews');top();return}
  if(p0==='diary'){current='diary';diaryView();setNav('diary');top();return}
