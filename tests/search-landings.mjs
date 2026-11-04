@@ -31,3 +31,15 @@ ctx.visit(['transfer','sochi-airport-gagra']);assert.equal(tr.from,'sochi');asse
 ctx.visit(['transfer'],{from:'sukhum',to:'pitsunda'});assert.equal(tr.from,'sukhum');assert.equal(tr.to,'pitsunda');assert.equal(formCount,2);
 ctx.visit(['transfer','not-found']);assert.equal(formCount,2);assert.match(ctx.app.innerHTML,/Маршрут не найден/);
 console.log('PASS: live catalogue prices and capacity, no invented airport rates, useful city pages, hidden-tour exclusion, searchable server content, sitemap, route-prefilled form, old address reset and unknown-route handling.');
+// A seasonal individual tour must never inherit an old per-person price.
+content.tours[0].hidden=false;
+content.tours.push({id:'labra',title:'Лабра',short:'SPA',cities:{'Сухум':{adult:3200,child:2800}},seasons:[{start:'01-01',mode:'individual',departures:[{city:'Сухум',enabled:true,adult:3200,child:2800,individualPrice:12100}]}]},{id:'closed',title:'Закрытый маршрут',cities:{'Сухум':{adult:4500}},seasons:[{start:'01-01',mode:'closed',departures:[{city:'Сухум',adult:4500}]}]});
+page=model.resolve('/excursions-from/sukhum',content);assert.match(page.body,/Индивидуальная поездка: 12\s100 ₽/);assert.doesNotMatch(page.body,/3\s200 ₽|Закрытый маршрут/);assert.doesNotMatch(model.tourExtras(content.tours[2],content),/3\s200 ₽/);
+const pricingJS=ts.transpileModule(fs.readFileSync('lib/tour-pricing.ts','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
+const {tourOffer}=await import('data:text/javascript;base64,'+Buffer.from(pricingJS).toString('base64'));
+const seasonal={id:'seasonal',cities:{'Сухум':{adult:999}},seasons:[{start:'05-01',mode:'group',departures:[{city:'Сухум',adult:2600,child:2100,times:['09:00']}]},{start:'11-01',mode:'individual',departures:[{city:'Сухум',adult:3200,child:2800,individualPrice:12100,times:['10:00']}]}]};
+for(let month=1;month<=12;month++){const date='2026-'+String(month).padStart(2,'0')+'-15',a=model.cityOffer(seasonal,'Сухум',date),b=tourOffer(seasonal,date,'Сухум');assert.equal(a.kind,b.kind);assert.equal(a.price,b.price);assert.equal(a.kid,b.kid)}
+const worker=fs.readFileSync('build/sites-worker.ts','utf8'),marker=worker.slice(worker.indexOf("if(['GET','HEAD'].includes(request.method)&&path==='/yandex_"),worker.indexOf('const asset=installationAsset(request)'));
+const testContext=vm.createContext({Response});vm.runInContext('function markerResponse(request,path){'+marker+'}',testContext);
+let response=testContext.markerResponse({method:'GET'},'/yandex_b0ca4a0e8cb79573.html');assert.equal(response.status,200);assert.match(await response.text(),/Verification: b0ca4a0e8cb79573/);response=testContext.markerResponse({method:'HEAD'},'/yandex_b0ca4a0e8cb79573.html');assert.equal(await response.text(),'');assert.equal(testContext.markerResponse({method:'POST'},'/yandex_b0ca4a0e8cb79573.html'),undefined);
+console.log('PASS: seasonal listing prices agree with the booking server across all months; closed tours excluded, individual prices have the right unit; Yandex verification is a direct GET/HEAD response.');
