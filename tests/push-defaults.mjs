@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-const source=fs.readFileSync('public/user-app.js','utf8').split('/* Device push subscriptions and owner broadcast composer. */')[1].split("ADM_TABS.push(['push'")[0];
+const source=fs.readFileSync('public/user-app.js','utf8').split('/* Device push subscriptions and owner broadcast composer. */')[1].split('/* Owner broadcast composer: the push section of the admin panel is in admin-app.js. */')[0];
 async function check(permission,optedOut){
  let subscribed=0,permissions=0,saved=0;
  const label={textContent:''},button={dataset:{},disabled:true};
