@@ -33,7 +33,7 @@ new MutationObserver(records=>{for(const r of records){if(r.type==='attributes')
 publicLinks();
 document.addEventListener('click',e=>{
  const a=e.target.closest?.('a[href]');if(!a||e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||a.target||a.hasAttribute('download')||/^#\/admin(?:[/?]|$)/.test(routeHash()))return;
- const u=new URL(a.href,location.href);if(u.origin!==location.origin||u.hash||!/^\/(?:$|catalog(?:[/?]|$)|tour\/|transfer(?:\/|$)|excursions-from\/|map$|reviews$|journal(?:\/|$)|useful(?:\/|$)|faq$|fleet$|about$|contacts$|orders$|account$|favorites$|compare$|pick$|install$)/.test(u.pathname))return;
+ const u=new URL(a.href,location.href);if(u.origin!==location.origin||u.hash||!/^\/(?:$|catalog(?:[/?]|$)|excursions(?:[/?]|$)|tour\/|transfer(?:\/|$)|excursions-from\/|map$|reviews$|journal(?:\/|$)|useful(?:\/|$)|faq$|fleet$|about$|contacts$|orders$|account$|favorites$|compare$|pick$|install$)/.test(u.pathname))return;
  if(u.pathname==='/account'&&!serverIdentity&&serverTelegramAuth.enabled)return;
  if(u.pathname==='/faq'&&current==='home'&&$('#faq')){e.preventDefault();v17CloseMenu(true);v17ScrollToFaq(true);history.replaceState(history.state,'','/faq');routePreviousURL=location.href;return}
  e.preventDefault();const hash=routeHash(u);if(hash===routeHash())return;location.hash=hash;
