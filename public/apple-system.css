@@ -118,3 +118,18 @@ html body:not(.is-admin) ::selection{background:rgba(0,113,227,.2)}
 /* Section links on the tour page are plain chips (no blue outline) */
 html body:not(.is-admin) #app .tour-section-nav.tour-section-nav{gap:8px!important}
 html body:not(.is-admin) #app .tour-section-nav.tour-section-nav>a{text-decoration:none!important}
+
+/* ---------- 26.0 — page details ---------- */
+/* Page titles share one size: 48px on the computer, 27px on the phone */
+html body:not(.is-admin) #app :is(.wrap.section>h1:first-child,.comfort-page h1){font-size:48px!important;font-weight:700!important;line-height:1.1!important;letter-spacing:-.025em!important;margin-bottom:8px!important}
+html body:not(.is-admin) #app :is(.wrap.section>h1:first-child,.comfort-page h1)+:is(p,.sub){font-size:16px!important;line-height:1.45!important;color:var(--ui-ink-2)!important}
+html body:not(.is-admin) #app .wrap.section>h1:first-child+.sub+.btn{margin-top:16px!important}
+@media (max-width:640px){html body:not(.is-admin) #app :is(.wrap.section>h1:first-child,.comfort-page h1){font-size:27px!important;letter-spacing:-.02em!important}}
+/* One back control on the tour page: the floating one on the phone */
+@media (max-width:900px){html body:not(.is-admin):has(.floating-page-back:not([hidden])) #app .tour-back-control{display:none!important}}
+/* Back and forward links carry the same chevron as the other back buttons */
+html body:not(.is-admin) #app .btn>svg{width:16px;height:16px;flex:none}
+/* A picture that fails to load shows a small caption, not giant text */
+html body:not(.is-admin) #app img{font-size:12px;line-height:1.3;color:var(--ui-ink-2);overflow:hidden}
+/* Sliders in the brand blue */
+html body:not(.is-admin) #app input[type=range]{accent-color:var(--ui-blue)}
