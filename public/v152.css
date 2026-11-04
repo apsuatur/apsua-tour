@@ -1194,3 +1194,40 @@ html body #app #trPanel #trForm .transfer-passenger-names>div:focus-within{box-s
 /* error messages fit inside their tile */
 html body #app #trPanel #trForm .transfer-route-fields>.field:has(.err:not(:empty)){height:auto!important;grid-template-rows:14px 22px auto!important;padding-block:8px!important}
 html body #app #trPanel #trForm :is(.transfer-route-fields,.transfer-contact-fields,.transfer-passenger-names) .err:not(:empty),html body #app #trPanel #trForm>.field:has(#tr-flight)>.err:not(:empty){display:block!important;position:static!important;width:auto!important;margin:0!important;white-space:normal!important;overflow-wrap:anywhere;font:500 12px/1.3 var(--f-body)!important;text-align:left!important}
+
+/* 25.4 — text for search engines: one white tile «Подробнее…» under the page, opens in place. */
+html body #app .search-more-wrap{padding-top:8px!important;padding-bottom:32px!important}
+html body #app .search-more{background:var(--apple-surface,#fff);border-radius:14px;box-shadow:0 0 0 .5px rgba(0,0,0,.06),0 2px 10px rgba(0,0,0,.05);overflow:hidden}
+html body #app .search-more>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:0 16px;list-style:none;cursor:pointer;font:600 15px/1.3 var(--f-body);color:var(--apple-ink,#1d1d1f);-webkit-tap-highlight-color:transparent}
+html body #app .search-more>summary::-webkit-details-marker{display:none}
+html body #app .search-more>summary::after{content:'';flex:none;width:8px;height:8px;margin-right:4px;border-right:2px solid #b0b0b5;border-bottom:2px solid #b0b0b5;transform:rotate(-45deg);transition:transform .25s ease}
+html body #app .search-more[open]>summary::after{transform:rotate(45deg)}
+html body #app .search-more>summary:active{background:rgba(0,0,0,.03)}
+html body #app .search-more>summary:focus-visible{outline:3px solid var(--sea);outline-offset:-3px;border-radius:14px}
+html body #app .search-more[open]>summary{border-bottom:.5px solid rgba(0,0,0,.08)}
+html body #app .search-more-body{padding:4px 16px 18px;font-size:15px;line-height:1.5;color:#3a3a3c}
+html body #app .search-more-body :is(h2,h3){margin:18px 0 6px;font:600 17px/1.3 var(--f-body);letter-spacing:-.01em;color:var(--apple-ink,#1d1d1f)}
+html body #app .search-more-body h3{margin:0 0 2px;font-size:15px}
+html body #app .search-more-body p{margin:0 0 8px;line-height:1.5}
+html body #app .search-more-body ul{margin:8px 0 12px;padding-left:18px}
+html body #app .search-more-body li{margin:4px 0;line-height:1.5}
+html body #app .search-more-body li::marker{color:#b0b0b5}
+/* lists made only of links become rows with a chevron */
+html body #app .search-more-body ul:has(>li>a:only-child):not(:has(>li>:not(a))){list-style:none;padding:0;margin:10px 0 6px;border-radius:12px;background:#f5f5f7;overflow:hidden}
+html body #app .search-more-body ul:has(>li>a:only-child):not(:has(>li>:not(a)))>li{margin:0}
+html body #app .search-more-body ul:has(>li>a:only-child):not(:has(>li>:not(a)))>li+li{border-top:.5px solid rgba(0,0,0,.08)}
+html body #app .search-more-body ul:has(>li>a:only-child):not(:has(>li>:not(a)))>li>a{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;padding:10px 14px;color:var(--apple-ink,#1d1d1f)!important;text-decoration:none;line-height:1.3}
+html body #app .search-more-body ul:has(>li>a:only-child):not(:has(>li>:not(a)))>li>a::after{content:'›';flex:none;color:#b0b0b5;font-size:22px;line-height:1}
+/* excursion list inside a city page */
+html body #app .search-more-body ul:has(>li>h3){list-style:none;padding:0}
+html body #app .search-more-body ul:has(>li>h3)>li{margin:0;padding:12px 0;border-top:.5px solid rgba(0,0,0,.08)}
+html body #app .search-more-body ul:has(>li>h3) a{text-decoration:none}
+html body #app .search-more-body>p:last-child{margin-top:14px;font-size:14px}
+@media(prefers-reduced-motion:reduce){html body #app .search-more>summary::after{transition:none}}
+
+/* 25.7 — catalogue filters in one row on the phone: Цена · Все форматы · Популярные.
+   An old rule (v134) stretched «Цена» across the whole row and pushed the rest down. */
+@media(max-width:700px){
+html body #app .catalog-compact-toolbar .catalog-selects{display:grid!important;grid-template-columns:minmax(0,70fr) minmax(0,144fr) minmax(0,128fr)!important;gap:6px!important;flex-wrap:nowrap!important}
+html body #app .catalog-compact-toolbar .catalog-selects>*{grid-column:auto!important;grid-row:1!important;width:auto!important;min-width:0!important;margin:0!important}
+}

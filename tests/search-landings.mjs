@@ -9,7 +9,7 @@ assert.equal(model.paths(content).length,5);
 let page=model.resolve('/transfer/sochi-airport-gagra',content);assert.equal(page.from,'sochi');assert.equal(page.to,'gagra');assert.match(page.body,/5\s500 ₽/);assert.match(page.body,/до 7 пассажиров/);
 content.transfer.to[0].price=6123;page=model.resolve('/transfer/sochi-airport-gagra',content);assert.match(page.body,/6\s123 ₽/);assert.doesNotMatch(page.body,/5\s500 ₽/);
 page=model.resolve('/transfer/sukhum-airport-pitsunda',content);assert.match(page.body,/нет фиксированного тарифа/);assert.doesNotMatch(page.body,/5\s700 ₽/,'Sochi rate must not be used for Sukhum airport');
-page=model.resolve('/excursions-from/sukhum',content);assert.match(page.body,/2\s600 ₽/);assert.doesNotMatch(page.body,/Скрытая/);assert.ok(page.body.includes('city='+encodeURIComponent('Сухум')));assert.equal(model.resolve('/transfer/unknown',content),null);
+page=model.resolve('/excursions-from/sukhum',content);assert.match(page.body,/2\s600 ₽/);assert.doesNotMatch(page.body,/Скрытая/);assert.ok(page.body.includes('city='+encodeURIComponent('Сухум')));assert.equal(model.resolve('/transfer/unknown',content),null);assert.ok(!page.body.includes('href="/excursions-from/sukhum"'),'a city page does not list itself');assert.equal(page.from,'Сухума');assert.ok(!page.body.includes('/catalog'));
 assert.equal(model.tourTitle(content.tours[0]),'Экскурсия на озеро Рица из Сухума и Нового Афона');
 const api=fs.readFileSync('lib/site-api.ts','utf8');
 const js=ts.transpileModule('const SearchPages=globalThis.ApsuaSearchPages;\n'+api.slice(api.indexOf('const escapeHTML=')),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
@@ -25,9 +25,10 @@ content.tours[0].hidden=true;assert.ok(!model.paths(content).some(p=>p.startsWit
 assert.ok(!((await (await seoFile(new Request('https://apsuatur.com/sitemap.xml'),env)).text()).includes('/excursions-from/')));
 const src=fs.readFileSync('public/user-app.js','utf8');const transferBranch=src.slice(src.indexOf("if(p0==='transfer'){"),src.indexOf("if(p0==='map'){",src.indexOf("if(p0==='transfer'){")));
 const tr={from:'adler',to:'suhum',address:'Старый адрес',hotel:'Старый отель'};let formCount=0;
-const ctx=vm.createContext({window:{ApsuaSearchPages:model},C:content,tr,current:'',app:{innerHTML:'',insertAdjacentHTML(){}},$(){return{textContent:''}},transferView(){formCount++},setNav(){},top(){},esc:String});
-vm.runInContext('function visit(parts,q={}){const p0=parts[0];'+transferBranch+'}',ctx);
-ctx.visit(['transfer','sochi-airport-gagra']);assert.equal(tr.from,'sochi');assert.equal(tr.to,'gagra');assert.equal(tr.address,'');assert.equal(tr.hotel,'');assert.equal(formCount,1);
+const inserted=[];const helperSrc=src.slice(src.indexOf('function searchMoreHTML('),src.indexOf('\n',src.indexOf('function searchMoreHTML(')));
+const ctx=vm.createContext({window:{ApsuaSearchPages:model},C:content,tr,current:'',app:{innerHTML:'',insertAdjacentHTML(_,html){inserted.push(html)}},$(){return{textContent:''}},transferView(){formCount++},setNav(){},top(){},esc:String});
+vm.runInContext(helperSrc+';function visit(parts,q={}){const p0=parts[0];'+transferBranch+'}',ctx);
+ctx.visit(['transfer','sochi-airport-gagra']);assert.equal(tr.from,'sochi');assert.equal(tr.to,'gagra');assert.equal(tr.address,'');assert.equal(tr.hotel,'');assert.equal(formCount,1);assert.match(inserted.at(-1),/^<section [^>]*data-search-content><details class="search-more"><summary>Подробнее о маршруте<\/summary>/,'search text is folded under the form');assert.match(inserted.at(-1),/6\s123 ₽/);
 ctx.visit(['transfer'],{from:'sukhum',to:'pitsunda'});assert.equal(tr.from,'sukhum');assert.equal(tr.to,'pitsunda');assert.equal(formCount,2);
 ctx.visit(['transfer','not-found']);assert.equal(formCount,2);assert.match(ctx.app.innerHTML,/Маршрут не найден/);
 console.log('PASS: live catalogue prices and capacity, no invented airport rates, useful city pages, hidden-tour exclusion, searchable server content, sitemap, route-prefilled form, old address reset and unknown-route handling.');
@@ -43,3 +44,9 @@ const worker=fs.readFileSync('build/sites-worker.ts','utf8'),marker=worker.slice
 const testContext=vm.createContext({Response});vm.runInContext('function markerResponse(request,path){'+marker+'}',testContext);
 let response=testContext.markerResponse({method:'GET'},'/yandex_b0ca4a0e8cb79573.html');assert.equal(response.status,200);assert.match(await response.text(),/Verification: b0ca4a0e8cb79573/);response=testContext.markerResponse({method:'HEAD'},'/yandex_b0ca4a0e8cb79573.html');assert.equal(await response.text(),'');assert.equal(testContext.markerResponse({method:'POST'},'/yandex_b0ca4a0e8cb79573.html'),undefined);
 console.log('PASS: seasonal listing prices agree with the booking server across all months; closed tours excluded, individual prices have the right unit; Yandex verification is a direct GET/HEAD response.');
+// Catalogue filters on the phone: one row, in the order Цена · Формат · Сортировка.
+{const toolbar=src.slice(src.indexOf('<div class="catalog-selects">'),src.indexOf('</select></label></div>',src.indexOf('<div class="catalog-selects">')));
+ const order=['catalog-price','sort-format','sort-order'].map(c=>toolbar.indexOf(c));assert.ok(order.every(i=>i>0)&&order[0]<order[1]&&order[1]<order[2],'filters go Цена, формат, сортировка');
+ const css=fs.readFileSync('public/v152.css','utf8'),row=css.slice(css.lastIndexOf('@media(max-width:700px){\nhtml body #app .catalog-compact-toolbar .catalog-selects{display:grid'));
+ assert.match(row,/grid-template-columns:minmax\(0,70fr\) minmax\(0,144fr\) minmax\(0,128fr\)/);assert.match(row,/catalog-selects>\*\{grid-column:auto!important;grid-row:1!important/,'no filter may take a whole row');
+ console.log('PASS: catalogue filters stay in one row on the phone: Цена, формат, сортировка.')}
