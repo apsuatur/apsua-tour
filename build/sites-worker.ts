@@ -28,7 +28,9 @@ export default {
     const asset=installationAsset(request);if(asset)return asset;
     if(path.startsWith('/api/'))return siteAPI(request,env as any,ctx);
     if(['GET','HEAD'].includes(request.method)&&(path==='/robots.txt'||path==='/sitemap.xml'))return seoFile(request,env as any);
-    if(['GET','HEAD'].includes(request.method)&&(path==='/'||path==='/index.html'||/^\/(catalog|administrator|journal|account|transfer|map|faq|tour|reviews|useful|fleet|about|contacts|orders|favorites|compare|pick|install|excursions-from)(\/|$)/.test(path)))return new Response(request.method==='HEAD'?null:await pageShellFor(pageShell,request,env as any),{headers:pageHeaders});
+    // The excursion list moved from /catalog to /excursions; old links and search results follow permanently.
+    if(['GET','HEAD'].includes(request.method)&&/^\/catalog(\/|$)/.test(path)){const url=new URL(request.url),rest=path.slice('/catalog'.length).replace(/\/$/,'');url.pathname=rest?'/tour'+rest:'/excursions';return new Response(null,{status:301,headers:{Location:url.pathname+url.search,'Cache-Control':'public, max-age=3600'}})}
+    if(['GET','HEAD'].includes(request.method)&&(path==='/'||path==='/index.html'||/^\/(excursions|administrator|journal|account|transfer|map|faq|tour|reviews|useful|fleet|about|contacts|orders|favorites|compare|pick|install|excursions-from)(\/|$)/.test(path)))return new Response(request.method==='HEAD'?null:await pageShellFor(pageShell,request,env as any),{headers:pageHeaders});
     let binding = ctx.props?.CONNECTORS;
     // Local preview emulates the same request-scoped capability. This branch and
     // the auxiliary service binding are absent from production builds.

@@ -10,10 +10,12 @@ function routeHash(url=location){
  return '#'+(mapped==='/index.html'?'/':mapped)+(url.search||'');
 }
 window.apsuaRouteHash=routeHash;
+/* Text for search engines sits under the page, folded into one tile. */
+function searchMoreHTML(label,body){return '<section class="wrap section search-more-wrap" data-search-content><details class="search-more"><summary>'+esc(label)+'</summary><div class="prose search-more-body">'+body+'</div></details></section>'}
 function publicURL(hash){
  if(!/^#\//.test(hash)||/^#\/(admin)(?:[/?]|$)/.test(hash))return null;
  let path=hash.slice(1).replace(/^\/excursions\//,'/tour/');
- path=path.replace(/^\/excursions(?=[?]|$)/,'/catalog').replace(/^\/diary(?=[/?]|$)/,'/journal');
+ path=path.replace(/^\/diary(?=[/?]|$)/,'/journal');
  return path;
 }
 function canonicalPublicURL(){
@@ -282,7 +284,7 @@ function searchHTML(id){const q=ui.q;
   <button class="btn btn-accent" type="submit" aria-label="Найти экскурсии">${ICON.search}<span>Найти</span></button></form>`}
 function refreshSearch(){$$('form.search').forEach(f=>{f.outerHTML=searchHTML(f.id)})}
 const qString=()=>{const p=new URLSearchParams();if(ui.q.district)p.set('district',ui.q.district);if(ui.q.city)p.set('city',ui.q.city);if(ui.q.format)p.set('format',ui.q.format);if(ui.q.date)p.set('date',ui.q.date);if(ui.q.people!==1)p.set('people',ui.q.people);if(ui.cat!=='all')p.set('cat',ui.cat);if(ui.priceMin!=null)p.set('min',ui.priceMin);if(ui.priceMax!=null)p.set('max',ui.priceMax);const s=p.toString();return s?'?'+s:''};
-function syncCatalogHash(){if(current==='catalog'){history.replaceState(history.state,'','/catalog'+qString());routePreviousURL=location.href}}
+function syncCatalogHash(){if(current==='catalog'){history.replaceState(history.state,'','/excursions'+qString());routePreviousURL=location.href}}
 
 let popEl=null,cal={y:0,m:0,target:'q'};
 function closePop(){if(!popEl)return;if(popEl._bd)popEl._bd.remove();const b=popEl._btn;popEl.remove();popEl=null;if(b){b.setAttribute('aria-expanded','false')}}
@@ -913,7 +915,7 @@ function route(){
  const top=()=>{const y=uxPrevious==='tour'&&uxScrollPositions.has(uxDestination)?uxScrollPositions.get(uxDestination):0;scrollTo(0,y);updateCustomerOrdersBanner();if(y)requestAnimationFrame(()=>scrollTo(0,y))};
  if(p0==='fleet'){fleetPage();return}if(['about','contacts','contact'].includes(p0)){aboutFleetPage();return}if(p0==='orders'){current='orders';ordersView();setNav('account');top();return}if(p0==='compare'){compareView();top();return}if(p0==='pick'){pickerView();top();return}
  if(p0==='excursions'&&parts[1]){if(q.city||q.date){ui.q.city=String(q.city||'');ui.q.date=/^\d{4}-\d\d-\d\d$/.test(q.date||'')?q.date:''}current='tour';tourView(parts[1]);setNav('catalog');top();return}
- if(p0==='excursions'){applyQ(q);current='catalog';catalogView(false);if(window.ApsuaSearchPages)app.insertAdjacentHTML('beforeend','<section class="wrap section prose" data-search-content>'+window.ApsuaSearchPages.excursionOverview(C)+'</section>');setNav('catalog');top();return}
+ if(p0==='excursions'){applyQ(q);current='catalog';catalogView(false);if(window.ApsuaSearchPages)app.insertAdjacentHTML('beforeend',searchMoreHTML('Подробнее об экскурсиях',window.ApsuaSearchPages.excursionOverview(C)));setNav('catalog');top();return}
  if(p0==='favorites'){current='favorites';catalogView(true);setNav('favorites');top();return}
  if(p0==='transfer'){
   const search=window.ApsuaSearchPages,landing=parts[1]&&search?.resolve('/transfer/'+parts[1],C);
@@ -923,13 +925,16 @@ function route(){
   if(C.transfer.to.some(x=>x.id===to)){if(tr.to!==to){tr.hotel='';tr.address=''}tr.to=to;}
   if(landing)tr.direction='arrival';
   current='transfer';tr.step='form';transferView();
-  if(landing){const h=$('h1',app);if(h)h.textContent=landing.title;app.insertAdjacentHTML('beforeend','<section class="wrap section prose" data-search-content>'+landing.body+'</section>')}
-  else if(search)app.insertAdjacentHTML('beforeend','<section class="wrap section prose" data-search-content>'+search.transferOverview(C)+'</section>');
+  if(landing){const h=$('h1',app);if(h)h.textContent=landing.title;app.insertAdjacentHTML('beforeend',searchMoreHTML('Подробнее о маршруте',landing.body))}
+  else if(search)app.insertAdjacentHTML('beforeend',searchMoreHTML('Подробнее о трансфере',search.transferOverview(C)));
   setNav('transfer');top();return
  }
  if(p0==='excursions-from'){
   const landing=window.ApsuaSearchPages?.resolve('/excursions-from/'+parts[1],C);current='catalog';
-  app.innerHTML=landing?'<article class="wrap section prose" data-search-content><h1>'+esc(landing.title)+'</h1>'+landing.body+'</article>':'<div class="wrap section"><h1>Направление не найдено</h1><a href="/catalog">Все экскурсии</a></div>';setNav('catalog');top();return
+  if(!landing){app.innerHTML='<div class="wrap section"><h1>Направление не найдено</h1><a href="/excursions">Все экскурсии</a></div>';setNav('catalog');top();return}
+  // City pages from search show the real catalogue for that city; the search text stays below, folded.
+  applyQ({city:landing.city});catalogView(false);const h=$('h1',app);if(h)h.textContent=landing.title;
+  app.insertAdjacentHTML('beforeend',searchMoreHTML('Подробнее об экскурсиях из '+landing.from,landing.body));setNav('catalog');top();return
  }
  if(p0==='map'){current='map';mapView();setNav('map');top();return}
  if(p0==='reviews'){current='reviews';reviewsView();setNav('reviews');top();return}

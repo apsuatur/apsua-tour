@@ -435,11 +435,11 @@ async function publicTours(env:Env){return (await publicSEOContent(env)).tours}
 export async function seoFile(request:Request,env:Env):Promise<Response>{const origin=new URL(request.url).origin,path=new URL(request.url).pathname;
  if(path==='/robots.txt')return new Response(['User-agent: *','Allow: /','Disallow: /api/','Allow: /api/media/','Allow: /api/app-icon-','Disallow: /account','Disallow: /administrator','','Sitemap: '+origin+'/sitemap.xml',''].join('\n'),{headers:{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'public, max-age=3600'}});
  const c=env.DB?await publicSEOContent(env):{tours:[]};
- const pages=['/','/catalog','/transfer','/map','/journal','/reviews','/about','/fleet','/useful','/faq',...c.tours.map((t:any)=>'/tour/'+encodeURIComponent(t.id)),...SearchPages.paths(c)];
+ const pages=['/','/excursions','/transfer','/map','/journal','/reviews','/about','/fleet','/useful','/faq',...c.tours.map((t:any)=>'/tour/'+encodeURIComponent(t.id)),...SearchPages.paths(c)];
  return new Response('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+pages.map(p=>'<url><loc>'+escapeHTML(origin+p)+'</loc></url>').join('\n')+'\n</urlset>\n',{headers:{'Content-Type':'application/xml; charset=utf-8','Cache-Control':'public, max-age=3600'}})}
 const PUBLIC_SEO:Record<string,[string,string]>={
  '/':['Экскурсии и трансфер по Абхазии — Апсуа Тур','Экскурсии на озеро Рица, к водопадам и термальным источникам. Трансфер из Сочи, Адлера и аэропорта Сухум. Заявка онлайн, условия подтверждает диспетчер.'],
- '/catalog':['Экскурсии по Абхазии — маршруты и цены | Апсуа Тур','Выберите экскурсию по Абхазии: Рица, ущелья, водопады и термальные источники. Программы, цены и заявка на удобную дату.'],
+ '/excursions':['Экскурсии по Абхазии — маршруты и цены | Апсуа Тур','Выберите экскурсию по Абхазии: Рица, ущелья, водопады и термальные источники. Программы, цены и заявка на удобную дату.'],
  '/transfer':['Трансфер в Абхазию — Апсуа Тур','Закажите трансфер из аэропорта или с вокзала в города Абхазии. Укажите маршрут, дату и пассажиров; стоимость подтвердит диспетчер.'],
  '/map':['Карта маршрутов по Абхазии — Апсуа Тур','Изучите направления и экскурсионные маршруты по Абхазии на карте.'],
  '/journal':['Истории путешествий по Абхазии — Апсуа Тур','Впечатления путешественников и истории о поездках по Абхазии.'],
@@ -450,9 +450,9 @@ const PUBLIC_SEO:Record<string,[string,string]>={
  '/faq':['Вопросы о бронировании — Апсуа Тур','Как подать заявку, получить подтверждение и уточнить условия поездки.'],
  '/install':['Приложение Апсуа Тур на телефон','Установите сайт Апсуа Тур на экран телефона для удобного доступа к поездкам.']
 };
-function publicAnchorLinks(html:string){return html.replace(/href="#\/([^"<>]*)"/g,(_,route:string)=>{if(/^admin(?:[/?]|$)/.test(route))return 'href="#/'+route+'"';return 'href="/'+route.replace(/^excursions\//,'tour/').replace(/^excursions(?=[?]|$)/,'catalog').replace(/^diary(?=[/?]|$)/,'journal')+'"'})}
+function publicAnchorLinks(html:string){return html.replace(/href="#\/([^"<>]*)"/g,(_,route:string)=>{if(/^admin(?:[/?]|$)/.test(route))return 'href="#/'+route+'"';return 'href="/'+route.replace(/^excursions\//,'tour/').replace(/^diary(?=[/?]|$)/,'journal')+'"'})}
 export async function pageShellFor(shell:string,request:Request,env:Env){
- const url=new URL(request.url),path=url.pathname.replace(/\/$/,'')||'/',match=path.match(/^\/tour\/([^/]+)$/),content=env.DB&&(match||path==='/'||path==='/catalog'||path.startsWith('/transfer')||path.startsWith('/excursions-from'))?await publicSEOContent(env):{tours:[]},tours=content.tours,landing=SearchPages.resolve(path,content);
+ const url=new URL(request.url),path=url.pathname.replace(/\/$/,'')||'/',match=path.match(/^\/tour\/([^/]+)$/),content=env.DB&&(match||path==='/'||path==='/excursions'||path.startsWith('/transfer')||path.startsWith('/excursions-from'))?await publicSEOContent(env):{tours:[]},tours=content.tours,landing=SearchPages.resolve(path,content);
  let tour:any=null;if(match){try{tour=tours.find((t:any)=>t.id===decodeURIComponent(match[1]))}catch{}}
  const spec=PUBLIC_SEO[path],indexable=!!spec||!!tour||!!landing;
  const rawTitle=landing?landing.title+' — Апсуа Тур':tour?String(SearchPages.tourTitle(tour)).slice(0,120)+' — Апсуа Тур':spec?.[0]||'Апсуа Тур';
@@ -466,7 +466,7 @@ export async function pageShellFor(shell:string,request:Request,env:Env){
  let body='<h1>'+escapeHTML(landing?landing.title:tour?tour.title:rawTitle)+'</h1><p>'+text+'</p>';
  if(landing)body=landing.kind==='transfer'?'<h1>'+escapeHTML(landing.title)+'</h1><a href="/transfer?from='+encodeURIComponent(landing.from)+'&amp;to='+encodeURIComponent(landing.to)+'">Оформить заявку на этот маршрут</a>'+landing.body:'<h1>'+escapeHTML(landing.title)+'</h1>'+landing.body;
  else if(tour){const paragraphs=Array.isArray(tour.about)?tour.about:[tour.about||''];body+=paragraphs.map((v:any)=>'<p>'+escapeHTML(v)+'</p>').join('');if(Array.isArray(tour.program))body+='<h2>Программа</h2><ul>'+tour.program.map((r:any)=>'<li>'+escapeHTML(Array.isArray(r)?r.filter(Boolean).join(' — '):'')+'</li>').join('')+'</ul>';body+=SearchPages.tourExtras(tour,content);body+='<p>Наличие мест, время и стоимость подтверждает диспетчер.</p><a href="/catalog">Все экскурсии</a>'}
- else if(path==='/'||path==='/catalog')body+='<h2>Маршруты по Абхазии</h2><ul>'+list+'</ul>'+SearchPages.excursionOverview(content);
+ else if(path==='/'||path==='/excursions')body+='<h2>Маршруты по Абхазии</h2><ul>'+list+'</ul>'+SearchPages.excursionOverview(content);
  if(path==='/transfer')body+=SearchPages.transferOverview(content);
  html=html.replace(/<main id="app">[\s\S]*?<\/main>/,()=>'<main id="app"><div class="wrap section">'+body+'</div></main>');
  const structured=tour?{'@context':'https://schema.org','@type':'TouristTrip',name:tour.title,description:rawText,url:url.origin+path,touristType:'Путешественники'}:path==='/'?{'@context':'https://schema.org','@type':'TravelAgency',name:'Апсуа Тур',url:url.origin+'/'}:null;

@@ -7,8 +7,8 @@ const helper=source.slice(source.indexOf('function routeHash('),source.indexOf('
 let location=new URL('https://apsuatur.com/tour/ritsa?city=sukhum');
 const context=vm.createContext({location,window:{},history:{state:{apsuaIndex:4},replaceState(state,_,url){assert.equal(state.apsuaIndex,4);location=new URL(url,location);context.location=location}},routePreviousURL:location.href});
 vm.runInContext(helper,context);
-for(const [path,hash] of [['/','#/'],['/catalog?cat=mount','#/excursions?cat=mount'],['/tour/ritsa?city=sukhum','#/excursions/ritsa?city=sukhum'],['/journal/story','#/diary/story'],['/administrator','#/admin'],['/account','#/account']])assert.equal(context.routeHash(new URL(path,'https://apsuatur.com')),hash);
-for(const [hash,path] of [['#/','/'],['#/excursions?cat=mount','/catalog?cat=mount'],['#/excursions/ritsa','/tour/ritsa'],['#/diary/story','/journal/story'],['#/admin/tours',null]])assert.equal(context.publicURL(hash),path);
+for(const [path,hash] of [['/','#/'],['/catalog?cat=mount','#/excursions?cat=mount'],['/excursions?cat=mount','#/excursions?cat=mount'],['/tour/ritsa?city=sukhum','#/excursions/ritsa?city=sukhum'],['/journal/story','#/diary/story'],['/administrator','#/admin'],['/account','#/account']])assert.equal(context.routeHash(new URL(path,'https://apsuatur.com')),hash);
+for(const [hash,path] of [['#/','/'],['#/excursions?cat=mount','/excursions?cat=mount'],['#/excursions/ritsa','/tour/ritsa'],['#/diary/story','/journal/story'],['#/admin/tours',null]])assert.equal(context.publicURL(hash),path);
 context.location=new URL('https://apsuatur.com/#/excursions/ritsa?city=sukhum');context.canonicalPublicURL();assert.equal(location.pathname,'/tour/ritsa');assert.equal(location.search,'?city=sukhum');assert.equal(location.hash,'');assert.equal(context.routeHash(),'#/excursions/ritsa?city=sukhum');
 const api=readFileSync('lib/site-api.ts','utf8');
 await import('../public/search-pages.js');
@@ -20,8 +20,11 @@ const tours=[{id:'ritsa',title:'Рица <озеро>',short:'Горы & вод�
 const env={DB:{prepare(){return{async first(){return{value:JSON.stringify({tours})}}}}}};
 const render=path=>pageShellFor(shell,new Request('https://apsuatur.com'+path),env);
 let html=await render('/tour/ritsa?city=sukhum');assert.match(html,/<h1>Рица &lt;озеро&gt;<\/h1>/);assert.match(html,/Описание поездки/);assert.match(html,/<link rel="canonical" href="https:\/\/apsuatur.com\/tour\/ritsa">/);assert.match(html,/application\/ld\+json/);assert.ok(!html.includes('href="#/excursions'));
-html=await render('/catalog');assert.match(html,/<a href="\/tour\/ritsa">/);assert.ok(!html.includes('Скрытая'));
+html=await render('/excursions');assert.match(html,/<a href="\/tour\/ritsa">/);assert.match(html,/content="index,follow"/);assert.match(html,/<link rel="canonical" href="https:\/\/apsuatur.com\/excursions">/);assert.ok(!html.includes('href="/catalog'),'no links to the old address');assert.ok(!html.includes('Скрытая'));
 html=await render('/account');assert.match(html,/content="noindex,follow"/);
 html=await render('/tour/hidden');assert.match(html,/content="noindex,follow"/);assert.ok(!html.includes('Скрытая'));
-const sitemap=await (await seoFile(new Request('https://apsuatur.com/sitemap.xml'),env)).text();assert.ok(sitemap.includes('/tour/ritsa'));assert.ok(!sitemap.includes('/tour/hidden'));assert.ok(!sitemap.includes('/account'));assert.ok(!sitemap.includes('#/'));
+const sitemap=await (await seoFile(new Request('https://apsuatur.com/sitemap.xml'),env)).text();assert.ok(sitemap.includes('/tour/ritsa'));assert.ok(!sitemap.includes('/tour/hidden'));assert.ok(!sitemap.includes('/account'));assert.ok(!sitemap.includes('#/'));assert.ok(sitemap.includes('<loc>https://apsuatur.com/excursions</loc>'));assert.ok(!sitemap.includes('/catalog'));
+// The old /catalog address forwards permanently to /excursions; old /catalog/<id> goes to the tour page.
+const worker=readFileSync('build/sites-worker.ts','utf8'),redirect=worker.split('\n').find(l=>l.includes('/^\\/catalog(\\/|$)/.test(path)'))||'';for(const part of ['status:301',"'/tour'+rest:'/excursions'",'url.pathname+url.search'])assert.ok(redirect.includes(part),'redirect keeps '+part);assert.ok(worker.includes('/^\\/(excursions|'),'the worker serves /excursions');
+const shellText=readFileSync('lib/site-shell.ts','utf8');assert.ok(!shellText.includes('href=\\"/catalog'),'menus link to /excursions');
 console.log('PASS: clean/legacy URL mapping, queries, private routes, preserved history state, server-rendered catalogue and tour text, escaping, canonical, structured data, private noindex and public sitemap.');
