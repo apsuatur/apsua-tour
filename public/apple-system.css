@@ -213,3 +213,19 @@ html body:not(.is-admin) #app .account-phone-home{display:none}
 }
 html body:not(.is-admin) #app .orders-page.is-empty :is(.orders-page-tools,.orders-type-filter,[data-refresh-customer-orders]){display:none!important}
 html body:not(.is-admin) #app .orders-page.is-empty .orders-empty{display:grid;justify-items:center;gap:10px}
+
+/* 26.7 — home: Yandex reviews plaque, four steps on phones, lower opening photo on phones. */
+html body:not(.is-admin) #app .v4-yandex.is-compact .yandex-plaque{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 14px 14px 18px;border-radius:18px;background:var(--ui-surface)}
+html body:not(.is-admin) #app .v4-yandex.is-compact .yandex-plaque>span{display:grid;gap:2px;min-width:0}
+html body:not(.is-admin) #app .v4-yandex.is-compact .yandex-plaque small{font-size:13px;color:var(--muted)}
+html body:not(.is-admin) #app .v4-yandex.is-compact .yandex-plaque .btn{flex:none}
+@media (max-width:760px){
+ html body:not(.is-admin) #app .v4-steps-sec{display:block!important}
+ html body:not(.is-admin) #app .v4-steps-sec h2{text-align:left;font-size:22px}
+ html body:not(.is-admin) #app .v4-steps-sec .v4-steps{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 0;padding:0;list-style:none}
+ html body:not(.is-admin) #app .v4-steps-sec .v4-steps>li{display:grid;align-content:start;gap:4px;padding:14px;border-radius:18px;background:var(--ui-surface);text-align:left}
+ html body:not(.is-admin) #app .v4-steps-sec .v4-steps>li svg{width:28px;height:28px}
+ html body:not(.is-admin) #app .v4-steps-sec .v4-steps>li strong{font-size:15px}
+ html body:not(.is-admin) #app .v4-steps-sec .v4-steps>li span{font-size:13px;line-height:1.35;color:var(--muted)}
+ html body .v4-hero{min-height:min(400px,60svh)!important}
+}

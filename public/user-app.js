@@ -2956,5 +2956,15 @@ const refreshPushBeforePhoneHome=refreshPushDevice;refreshPushDevice=async funct
 /* «Мои заявки» with no requests yet: no filters, two ways to start. */
 const renderCustomerOrdersBeforeEmpty=renderCustomerOrders;renderCustomerOrders=function(...args){const result=renderCustomerOrdersBeforeEmpty.apply(this,args);const page=$('.orders-page'),empty=!customerOrdersLoading&&!customerOrdersError&&!myTripOrders().length;page?.classList.toggle('is-empty',empty);const box=$('#customerOrderList .orders-empty');if(empty&&box&&!box.querySelector('[href="#/transfer"]'))box.insertAdjacentHTML('beforeend','<a class="btn btn-ghost small" href="#/transfer">Заказать трансфер</a>');return result};
 
+/* 26.7 — home and catalogue: Yandex reviews load on request on the home page, «Четыре шага до поездки» on phones
+   right after the popular trips, a lower opening photo on phones, and price units on every card. */
+const yandexHTMLFull=yandexHTML;let yandexCompact=false;
+const YANDEX_REVIEWS_URL='https://yandex.ru/maps/org/apsua_tur/132935970380/reviews';
+yandexHTML=function(...args){if(!yandexCompact)return yandexHTMLFull.apply(this,args);return `<section class="v4-yandex is-compact" aria-labelledby="yandexReviewsTitle"><header class="v4-head"><h2 id="yandexReviewsTitle">Отзывы на Яндексе</h2><a href="${YANDEX_REVIEWS_URL}" target="_blank" rel="noopener noreferrer">Все отзывы ↗</a></header><div class="yandex-plaque"><span><b>Отзывы гостей на Яндекс Картах</b><small>Откроются прямо здесь</small></span><button type="button" class="btn btn-accent small" data-yandex-load>Показать</button></div></section>`};
+document.addEventListener('click',e=>{const button=e.target.closest?.('[data-yandex-load]');if(!button)return;const section=button.closest('.v4-yandex');if(!section)return;const holder=document.createElement('div');holder.innerHTML=yandexHTMLFull();const full=holder.firstElementChild;if(full){section.replaceWith(full);full.querySelector('iframe')?.focus?.({preventScroll:true})}});
+function homeStepsOnPhone(){const steps=$('#app .v4-steps-sec');if(!steps||!matchMedia('(max-width:760px)').matches)return;const popular=[...$$('#app .v4-sec')].find(sec=>/Чаще всего бронируют/.test(sec.querySelector('h2')?.textContent||''));if(popular&&popular.nextElementSibling!==steps)popular.after(steps)}
+const homeViewBeforeCompact=homeView;homeView=function(...args){yandexCompact=true;let result;try{result=homeViewBeforeCompact.apply(this,args)}finally{yandexCompact=false}homeStepsOnPhone();return result};
+v4Meta=function(t){const unit=t.price==null||!t.offerKind?'':t.offerKind==='individual'?' / группа':' / чел.';return `<span class="v4-meta"><span>${V4_ICON.clock}${esc(t.dur||'')}</span><span>${V4_ICON.tag}${t.price==null?'По запросу':'от '+rub(t.price)+unit}</span></span>`};
+
 hostedBoot();
 })();
