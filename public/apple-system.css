@@ -490,3 +490,25 @@ html body:not(.is-admin) #app #trForm.trw .trw-group legend{margin-bottom:4px;fo
 html body:not(.is-admin) #app #trForm.trw input.input.trw-filter{height:36px!important;min-height:36px!important;font-size:15px!important}
 html body:not(.is-admin) #app .trw-row{min-height:36px}
 html body:not(.is-admin) #app .trw-step .trw-group+.trw-group{margin-top:2px}
+/* 27.3 — owner chose pills: each place is a pill sized to its name; they wrap, so new cities simply join the flow */
+html body:not(.is-admin) #app #trForm.trw .trw-list{display:flex;flex-wrap:wrap;gap:8px;background:none;border-radius:0;overflow:visible;box-shadow:none}
+html body:not(.is-admin) #app #trForm.trw .trw-row{width:auto;min-height:36px;padding:0 14px 0 11px!important;gap:6px;border-radius:999px!important;background:var(--ui-surface,#fff)!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.14)!important}
+html body:not(.is-admin) #app #trForm.trw .trw-row+.trw-row::before{display:none}
+html body:not(.is-admin) #app #trForm.trw .trw-row b{flex:none;font-size:15px;font-weight:500}
+html body:not(.is-admin) #app #trForm.trw .trw-row em{font-size:13px;color:var(--ui-ink-2)}
+html body:not(.is-admin) #app #trForm.trw .trw-row em::before{content:"· "}
+html body:not(.is-admin) #app #trForm.trw .trw-row-ico,html body:not(.is-admin) #app #trForm.trw .trw-row-ico .trw-ico{width:17px;height:17px}
+html body:not(.is-admin) #app #trForm.trw .trw-row-check{display:none}
+html body:not(.is-admin) #app #trForm.trw .trw-row:active{background:rgba(0,0,0,.05)!important;transform:scale(.97)}
+@media (hover:hover){html body:not(.is-admin) #app #trForm.trw .trw-row:not([aria-checked=true]):hover{background:rgba(0,0,0,.03)!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.26)!important}}
+html body:not(.is-admin) #app #trForm.trw .trw-row[aria-checked=true]{background:var(--ui-blue)!important;color:#fff!important;box-shadow:0 2px 8px rgba(0,113,227,.28)!important}
+html body:not(.is-admin) #app #trForm.trw .trw-row[aria-checked=true] :is(.trw-row-ico,em){color:#fff}
+html body:not(.is-admin) #app #trForm.trw .trw-row:focus-visible{box-shadow:var(--ui-ring)!important}
+html body:not(.is-admin) #app #trForm.trw .trw-group legend{margin:0 0 10px;font-size:16px;font-weight:600;letter-spacing:-.01em;text-transform:none;color:var(--ui-ink)}
+html body:not(.is-admin) #app #trForm.trw .trw-group+.trw-group{margin-top:12px}
+@media (prefers-reduced-motion:reduce){html body:not(.is-admin) #app #trForm.trw .trw-row:active{transform:none}}
+@media (prefers-contrast:more){html body:not(.is-admin) #app #trForm.trw .trw-row{box-shadow:inset 0 0 0 1px rgba(0,0,0,.5)!important}}
+html body:not(.is-admin) #app #trForm.trw .trw-row{min-height:34px;padding:0 12px 0 10px!important;gap:5px}
+html body:not(.is-admin) #app #trForm.trw .trw-row b{font-size:14px}
+html body:not(.is-admin) #app #trForm.trw .trw-row em{font-size:12px}
+html body:not(.is-admin) #app #trForm.trw .trw-row-ico,html body:not(.is-admin) #app #trForm.trw .trw-row-ico .trw-ico{width:16px;height:16px}
