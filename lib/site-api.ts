@@ -183,7 +183,17 @@ const knownVisitor=!!request.headers.get('cookie')?.match(/(?:^|; )apsua_visitor
   return json({logins:rows.results.map((r:any)=>({at:r.created,name:JSON.parse(r.profile||'{}').name||'Пользователь',email:JSON.parse(r.identity||'{}').email||''}))});
  }
  if(path==='/api/state'&&request.method==='GET'){
-  await seedContent(env);const row=await env.DB.prepare('SELECT value,revision FROM settings WHERE key=?').bind('content').first<any>();const content=JSON.parse(row.value);
+  // build 170: the reads below do not depend on each other, so they run at the same time instead of one after another.
+  // Content is seeded only when it is missing, so an ordinary visit no longer writes to the database.
+  const readContent=()=>env.DB.prepare('SELECT value,revision FROM settings WHERE key=?').bind('content').first<any>();
+  const [row,shared,lastModifiedAt,ownRows,user]=await Promise.all([
+   (async()=>{let found=await readContent();if(!found){await seedContent(env);found=await readContent()}return found})(),
+   stories(env,id,isAdmin||isObserver).then(list=>publicAuthors(env,list)),
+   lastAdminChange(env),
+   id?Promise.all([env.DB.prepare("SELECT * FROM records WHERE kind IN ('bookings','transfers','questions') AND (owner=? OR ?=1) ORDER BY created DESC LIMIT 5000").bind(id,canViewOrders?1:0).all<any>(),env.DB.prepare("SELECT * FROM records WHERE kind='favs' AND owner=?").bind(id).all<any>()]):null,
+   id?sessionUser():null
+  ]);
+  const content=JSON.parse(row.value);
   if(content.transfer&&content.transfer.tariffRevision!==42){
    content.transfer.classes=seed.transfer.classes;
    for(const destination of content.transfer.to||[]){const rates=(transferRates.destinations as Record<string,any>)[destination.id];if(rates){destination.rates=rates;if(!Number(destination.price))destination.price=rates.standard}}
@@ -192,8 +202,8 @@ const knownVisitor=!!request.headers.get('cookie')?.match(/(?:^|; )apsua_visitor
    if(updated.meta.changes)row.revision++;
    else {const fresh=await env.DB.prepare('SELECT value,revision FROM settings WHERE key=?').bind('content').first<any>();Object.assign(content,JSON.parse(fresh.value));row.revision=fresh.revision}
   }
-  delete content.site.adminPass;const shared=await publicAuthors(env,await stories(env,id,isAdmin||isObserver));content.stories=(content.stories||[]).map((s:any)=>({...s,...shared.metadata(s.id)}));// Requests are selected by kind so profiles, uploads and service rows never push orders out of the admin list.
-const privateRows=id?await env.DB.prepare("SELECT * FROM records WHERE kind IN ('bookings','transfers','questions') AND (owner=? OR ?=1) ORDER BY created DESC LIMIT 5000").bind(id,canViewOrders?1:0).all<any>():{results:[] as any[]};if(id)privateRows.results.push(...(await env.DB.prepare("SELECT * FROM records WHERE kind='favs' AND owner=?").bind(id).all<any>()).results);const lists:any={diary:shared.diary,reviews:shared.reviews};for(const kind of kinds.filter(x=>!['diary','reviews'].includes(x)))lists[kind]=privateRows.results.filter((x:any)=>x.kind===kind).map((x:any)=>({...orderView(kind,JSON.parse(x.body)),uid:x.owner,status:x.status,createdAt:x.created,updatedAt:x.updated}));const favorites=lists.favs.find((x:any)=>x.owner===id);lists.favs=favorites?.items||[];delete content.site.adminPass;const response=json({content,revision:row.revision,lastModifiedAt:await lastAdminChange(env),lists,admin:canAccessAdmin,editor:isEditor,staffRole:isOwner?'owner':staffRole,testAuth:{enabled:testConfig(env).enabled,until:env.TEST_AUTH_UNTIL||null},telegramAuth:telegramConfig(env),yandexAuth:yandexConfig(env),yandexMapsKey:/^[A-Za-z0-9-]{8,80}$/.test(env.YANDEX_MAPS_KEY||'')?env.YANDEX_MAPS_KEY:'',user:id?await sessionUser():null});response.headers.set('Set-Cookie','apsua_visitor='+visitorCookie+'; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=31536000');return response
+  delete content.site.adminPass;content.stories=(content.stories||[]).map((s:any)=>({...s,...shared.metadata(s.id)}));// Requests are selected by kind so profiles, uploads and service rows never push orders out of the admin list.
+const privateRows={results:ownRows?[...ownRows[0].results,...ownRows[1].results]:[] as any[]};const lists:any={diary:shared.diary,reviews:shared.reviews};for(const kind of kinds.filter(x=>!['diary','reviews'].includes(x)))lists[kind]=privateRows.results.filter((x:any)=>x.kind===kind).map((x:any)=>({...orderView(kind,JSON.parse(x.body)),uid:x.owner,status:x.status,createdAt:x.created,updatedAt:x.updated}));const favorites=lists.favs.find((x:any)=>x.owner===id);lists.favs=favorites?.items||[];delete content.site.adminPass;const response=json({content,revision:row.revision,lastModifiedAt,lists,admin:canAccessAdmin,editor:isEditor,staffRole:isOwner?'owner':staffRole,testAuth:{enabled:testConfig(env).enabled,until:env.TEST_AUTH_UNTIL||null},telegramAuth:telegramConfig(env),yandexAuth:yandexConfig(env),yandexMapsKey:/^[A-Za-z0-9-]{8,80}$/.test(env.YANDEX_MAPS_KEY||'')?env.YANDEX_MAPS_KEY:'',user});response.headers.set('Set-Cookie','apsua_visitor='+visitorCookie+'; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=31536000');return response
  }
  if(path==='/api/profile'&&request.method==='PUT'){
   const data=await body(request),name=clean(data.name,100),city=clean(data.city,100),about=clean(data.about,1500),avatar=clean(data.avatar,100);
