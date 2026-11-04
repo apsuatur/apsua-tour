@@ -422,3 +422,6 @@ html body:not(.is-admin) #app .trw-chip.is-current .trw-ico-accent{stroke:#fff}
 html body:not(.is-admin) #app .trw-chip.is-done{color:var(--ui-ink)!important;background:var(--ui-fill)!important}
 html body:not(.is-admin) #app .trw-chip .trw-ico{width:16px;height:16px}
 @media (max-width:640px){html body:not(.is-admin) #app .wrap:has(.trw-layout) .page-head p{display:none}}
+/* computer: the form and its heading sit in one centred column */
+html body:not(.is-admin) #app .tr-layout.trw-layout{margin-inline:auto}
+html body:not(.is-admin) #app .wrap:has(.trw-layout) .page-head{max-width:720px;margin-inline:auto}
