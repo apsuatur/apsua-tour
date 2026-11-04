@@ -564,3 +564,10 @@ html body:not(.is-admin) #app .trw-fields{gap:6px}
 html body:not(.is-admin) #app .trw-pick-field{min-height:52px}
 html body:not(.is-admin) #app .trw-notice.is-warn{color:var(--ui-ink)!important;background:var(--ui-surface,#fff)!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)}
 html body:not(.is-admin) #app .trw-notice.is-warn b{color:var(--ui-ink)}
+/* 27.7 — «Кто поедет?»: white rows with a hairline (like the rest of the form), blue switches; the child seat lives next to the children */
+html body:not(.is-admin) #app :is(.trw-switch,.trw-row-control){background:var(--ui-surface,#fff)!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)!important}
+html body:not(.is-admin) #app .trw-row-control.is-nested{background:var(--ui-surface,#fff)!important}
+html body:not(.is-admin) #app .trw-switch[aria-checked=true] .trw-switch-knob{background:var(--ui-blue,#0071e3)}
+html body:not(.is-admin) #app .trw-switch:focus-visible{box-shadow:var(--ui-ring)!important}
+html body:not(.is-admin) #app .trw-stepper button{background:var(--ui-fill,rgba(118,118,128,.12))!important}
+@media (prefers-contrast:more){html body:not(.is-admin) #app :is(.trw-switch,.trw-row-control){box-shadow:inset 0 0 0 1px rgba(0,0,0,.45)!important}}
