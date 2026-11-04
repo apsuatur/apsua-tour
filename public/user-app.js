@@ -878,7 +878,7 @@ document.addEventListener('change',e=>{
   // Autofill fires «change» for every filled field. Re-rendering the form in the middle of it made browsers
   // put values into the wrong fields (phone into the address) and closed the phone keyboard. Text fields only
   // update the state and the summary; structural controls still redraw the form.
-  if(['tr-name','tr-phone','tr-address','tr-flight','tr-via'].includes(t.id)){if(typeof updateTransferReview==='function')updateTransferReview();if(typeof v4TransferBar==='function')v4TransferBar();return}
+  if(['tr-name','tr-phone','tr-address','tr-flight','tr-via','tr-ok'].includes(t.id)||t.matches?.('[data-transfer-passenger-name]')){if(typeof updateTransferReview==='function')updateTransferReview();if(typeof v4TransferBar==='function')v4TransferBar();return}
   if(t.id==='tr-hotel'){const hotel=transferHotels().find(x=>x.name===t.value);tr.hotel=t.value;if(hotel){tr.address=hotel.address;const address=$('#tr-address');if(address)address.value=hotel.address}if(typeof updateTransferReview==='function')updateTransferReview();if(typeof v4TransferBar==='function')v4TransferBar();return}
   if(t.name==='tr-direction'){tr.direction=t.value;if(tr.cls!=='group')tr.cls='individual'}if(t.id==='tr-from')tr.from=t.value;if(t.id==='tr-to'){tr.to=t.value;tr.hotel='';tr.address=''}if(t.id==='tr-hotel'){tr.hotel=t.value;const hotel=transferHotels().find(x=>x.name===t.value);if(hotel)tr.address=hotel.address}if(t.id==='tr-time')tr.time=t.value;if(t.id==='tr-seat')tr.seat=t.checked;
   if(t.name==='cls'){tr.cls=t.value;tr.pax=Math.min(tr.pax,trCls().max)}
@@ -1576,7 +1576,7 @@ function validateRequestFields(kind){let good=true;const errors=kind==='bookings
  ]:[['tr-name','te-name',tr.name.trim().length>=2?'':'Введите имя — минимум 2 символа.'],['tr-phone','te-phone',phoneOk(tr.phone)?'':'Введите телефон из 10–11 цифр.'],['tr-via','te-via',['WhatsApp','Telegram','MAX'].includes(tr.via)?'':'Выберите WhatsApp, Telegram или MAX.'],['tr-address','te-address',tr.address.trim()?'':'Укажите улицу, дом или точный адрес объекта.'],['tr-time','te-time',/^\d\d:\d\d$/.test(tr.time)?'':'Укажите время рейса или поезда.']];for(const [id,errorId,message]of errors){if(!setRequestFieldError(id,errorId,message)&&good){$('#'+id)?.focus();good=false}}return good}
 window.addEventListener('submit',async e=>{
  const form=e.target,kind=form.id==='bkForm'?'bookings':form.id==='trForm'?'transfers':null;if(!kind)return;e.preventDefault();e.stopImmediatePropagation();if(kind==='bookings'?bookingSending:transferSending)return;
- saveRequestDraft(kind);if(!serverIdentity){openTelegramSignin();return}if(!validateRequestFields(kind))return;
+ saveRequestDraft(kind);if(!validateRequestFields(kind))return;if(!serverIdentity){markLoginDraft(kind);openTelegramSignin();return}
  const error=$(kind==='bookings'?'#bk-error':'#tr-error');if(error)error.textContent='';if(kind==='transfers'&&tr.direction==='departure'&&!departureDeadlineOK(tr.date,tr.time)){error.textContent='До отправления меньше 12 часов. Свяжитесь с менеджером.';return}
  if(kind==='bookings'&&(!bk.date||!bk.time||!tourOffer(tourById(bk.t.id)||bk.t,bk.date,departureCity,bk.kind).times.includes(bk.time))){error.textContent='Расписание изменилось. Выберите дату и время заново.';return}
  const button=$('button[type="submit"]',form);if(kind==='bookings')bookingSending=true;else transferSending=true;button.disabled=true;button.textContent='Отправляем…';window.apsuaRequestSending=true;form.setAttribute('aria-busy','true');const lockedControls=[...form.querySelectorAll('input,select,textarea,button')].map(el=>[el,el.disabled]);lockedControls.forEach(([el])=>el.disabled=true);
@@ -2895,6 +2895,39 @@ document.addEventListener('click',e=>{const toggle=e.target.closest?.('[data-pro
 let floatingBackLastY=window.scrollY||0;
 window.addEventListener('scroll',()=>{const control=document.querySelector('.floating-page-back'),y=window.scrollY||0;if(control&&Math.abs(y-floatingBackLastY)>6){control.classList.toggle('is-away',y>floatingBackLastY&&y>160);floatingBackLastY=y}},{passive:true});
 window.addEventListener('hashchange',()=>{floatingBackLastY=0;document.querySelector('.floating-page-back')?.classList.remove('is-away')});
+
+/* 26.3 — request forms: guests see field errors before the sign-in window, are told about sign-in in advance,
+   and get the filled form back after signing in. Transfer form: one price, no dead «Групповой» tile. */
+const LOGIN_DRAFT_KEY='apsua-login-draft';
+function signinProviderNames(){const tg=serverTelegramAuth?.enabled,ya=typeof serverYandexAuth!=='undefined'&&serverYandexAuth?.enabled;return tg&&ya?'Telegram или Яндекс':tg?'Telegram':ya?'Яндекс':''}
+function requestSigninNoteHTML(){const names=signinProviderNames();return `<p class="request-signin-note" role="note">${names?`Чтобы отправить заявку, войдите через ${names}.`:'Чтобы отправить заявку, войдите в аккаунт.'} Заполненные поля сохранятся.</p>`}
+function syncRequestSigninNote(formId){const form=$('#'+formId);if(!form)return;const note=form.querySelector('.request-signin-note');if(serverIdentity){note?.remove();return}if(note)return;form.querySelector('button[type="submit"]')?.insertAdjacentHTML('beforebegin',requestSigninNoteHTML())}
+function markLoginDraft(kind){try{sessionStorage.setItem(LOGIN_DRAFT_KEY,JSON.stringify({kind,id:kind==='bookings'?bk?.t?.id||'':'',at:Date.now()}))}catch{}}
+function takeLoginDraft(kind,id=''){try{const mark=JSON.parse(sessionStorage.getItem(LOGIN_DRAFT_KEY)||'null');if(!mark||mark.kind!==kind||mark.id!==id||Date.now()-mark.at>3600000||!serverIdentity)return false;sessionStorage.removeItem(LOGIN_DRAFT_KEY);return true}catch{return false}}
+/* A draft saved as a guest moves to the account that has just signed in. */
+const readRequestDraftBeforeGuest=readRequestDraft;
+readRequestDraft=function(kind,id=''){let data=readRequestDraftBeforeGuest(kind,id);if(data||!serverIdentity)return data;try{const guestKey='apsua-request-draft:guest:'+kind+':'+id,raw=localStorage.getItem(guestKey);if(raw){localStorage.setItem(uxDraftKey(kind,id),raw);localStorage.removeItem(guestKey);data=readRequestDraftBeforeGuest(kind,id)}}catch{}return data};
+/* After sign-in the booking opens straight on the contact step, with everything filled in. The page may be
+   redrawn once more when the account data arrives, so the restored booking is reapplied until it is sent. */
+let loginBookingRestore=null;
+function applyLoginBookingDraft(){const data=readRequestDraft('bookings',bk.t.id);if(!data)return false;Object.assign(bk,{date:data.date&&fromIso(data.date)>=today0()?data.date:null,time:data.time,adults:Math.max(1,Number(data.adults)||1),kids:Math.max(0,Number(data.kids)||0),kind:data.kind||bk.kind,preferredVehicleId:data.preferredVehicleId||'',requestCode:data.requestCode,contact:data.contact||{}});departureCity=data.city||departureCity;bk.step=bk.date&&bk.time?'form':'pick';uxRestoringDraft=true;try{renderBooking()}finally{uxRestoringDraft=false}return true}
+const tourViewBeforeLoginDraft=tourView;tourView=function(...args){const result=tourViewBeforeLoginDraft.apply(this,args);if(!bk)return result;
+ if(takeLoginDraft('bookings',bk.t.id)){loginBookingRestore={id:bk.t.id,at:Date.now()};if(applyLoginBookingDraft()){requestAnimationFrame(()=>$('#booking')?.scrollIntoView({block:'start'}));toast('Заявка восстановлена — проверьте и отправьте')}}
+ else if(loginBookingRestore?.id===bk.t.id&&Date.now()-loginBookingRestore.at<1800000)applyLoginBookingDraft();
+ else loginBookingRestore=null;
+ return result};
+document.addEventListener('input',e=>{if(loginBookingRestore&&bk&&e.target.closest?.('#bkForm'))saveRequestDraft('bookings')});
+const renderBookingAfterLoginDraft=renderBooking;renderBooking=function(...args){if(bk?.step==='done')loginBookingRestore=null;return renderBookingAfterLoginDraft.apply(this,args)};
+const transferViewBeforeLoginDraft=transferView;transferView=function(...args){const result=transferViewBeforeLoginDraft.apply(this,args);
+ if(takeLoginDraft('transfers')){const data=readRequestDraft('transfers');if(data){Object.assign(tr,data);if(!tr.date||fromIso(tr.date)<today0())tr.date=iso(today0());tr.step='form';$$('[data-transfer-passenger-name]').forEach(input=>{input.value=tr.passengerNames?.[Number(input.dataset.transferPassengerName)]||''});uxRestoringDraft=true;try{renderTransfer()}finally{uxRestoringDraft=false}requestAnimationFrame(()=>$('#trForm button[type="submit"]')?.scrollIntoView({block:'center'}));toast('Заявка восстановлена — проверьте и отправьте')}}
+ return result};
+/* Transfer: when the group transfer is out of season, one line instead of a disabled tile. */
+const RU_MONTHS_GEN=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+function monthDayLabel(md){const [m,d]=String(md||'').split('-').map(Number);return m>=1&&m<=12&&d>=1?d+' '+RU_MONTHS_GEN[m-1]:''}
+const enhanceTransferFormBeforeKind=enhanceTransferForm;enhanceTransferForm=function(...args){const result=enhanceTransferFormBeforeKind.apply(this,args);
+ const field=$('#trForm .transfer-kind-field'),disabled=field?.querySelector('label.is-disabled');if(field&&disabled&&!field.querySelector('.transfer-kind-note')){const p=C.transfer.groupPolicy||{enabled:true,start:'05-01',end:'10-31'},from=monthDayLabel(p.start),to=monthDayLabel(p.end);field.classList.add('is-single');if(p.enabled&&from&&to)field.insertAdjacentHTML('beforeend',`<p class="transfer-kind-note">Групповой трансфер — с ${from} по ${to}</p>`)}
+ syncRequestSigninNote('trForm');return result};
+const renderBookingBeforeSigninNote=renderBooking;renderBooking=function(...args){const result=renderBookingBeforeSigninNote.apply(this,args);syncRequestSigninNote('bkForm');return result};
 
 hostedBoot();
 })();
