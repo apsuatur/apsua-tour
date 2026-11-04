@@ -44,3 +44,9 @@ const worker=fs.readFileSync('build/sites-worker.ts','utf8'),marker=worker.slice
 const testContext=vm.createContext({Response});vm.runInContext('function markerResponse(request,path){'+marker+'}',testContext);
 let response=testContext.markerResponse({method:'GET'},'/yandex_b0ca4a0e8cb79573.html');assert.equal(response.status,200);assert.match(await response.text(),/Verification: b0ca4a0e8cb79573/);response=testContext.markerResponse({method:'HEAD'},'/yandex_b0ca4a0e8cb79573.html');assert.equal(await response.text(),'');assert.equal(testContext.markerResponse({method:'POST'},'/yandex_b0ca4a0e8cb79573.html'),undefined);
 console.log('PASS: seasonal listing prices agree with the booking server across all months; closed tours excluded, individual prices have the right unit; Yandex verification is a direct GET/HEAD response.');
+// Catalogue filters on the phone: one row, in the order Цена · Формат · Сортировка.
+{const toolbar=src.slice(src.indexOf('<div class="catalog-selects">'),src.indexOf('</select></label></div>',src.indexOf('<div class="catalog-selects">')));
+ const order=['catalog-price','sort-format','sort-order'].map(c=>toolbar.indexOf(c));assert.ok(order.every(i=>i>0)&&order[0]<order[1]&&order[1]<order[2],'filters go Цена, формат, сортировка');
+ const css=fs.readFileSync('public/v152.css','utf8'),row=css.slice(css.lastIndexOf('@media(max-width:700px){\nhtml body #app .catalog-compact-toolbar .catalog-selects{display:grid'));
+ assert.match(row,/grid-template-columns:minmax\(0,70fr\) minmax\(0,144fr\) minmax\(0,128fr\)/);assert.match(row,/catalog-selects>\*\{grid-column:auto!important;grid-row:1!important/,'no filter may take a whole row');
+ console.log('PASS: catalogue filters stay in one row on the phone: Цена, формат, сортировка.')}
