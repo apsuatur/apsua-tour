@@ -1581,7 +1581,7 @@ window.addEventListener('submit',async e=>{
  if(kind==='bookings'&&(!bk.date||!bk.time||!tourOffer(tourById(bk.t.id)||bk.t,bk.date,departureCity,bk.kind).times.includes(bk.time))){error.textContent='Расписание изменилось. Выберите дату и время заново.';return}
  const button=$('button[type="submit"]',form);if(kind==='bookings')bookingSending=true;else transferSending=true;button.disabled=true;button.textContent='Отправляем…';window.apsuaRequestSending=true;form.setAttribute('aria-busy','true');const lockedControls=[...form.querySelectorAll('input,select,textarea,button')].map(el=>[el,el.disabled]);lockedControls.forEach(([el])=>el.disabled=true);
  const requestState=kind==='bookings'?bk:tr;
- const payload=kind==='bookings'?{code:bk.requestCode||(bk.requestCode=code('AT')),tour:bk.t.id,date:bk.date,time:bk.time,adults:bk.adults,kids:bk.kids,name:bk.contact.name.trim(),phone:bk.contact.phone.trim(),via:bk.contact.via||'WhatsApp',city:departureCity,format:bk.kind,season:bk.seasonName,total:bkTotal(),priceUnit:bk.kind==='individual'?'group':'person',hotel:bk.contact.hotel||'',note:bk.contact.note||''}:{code:tr.requestCode||(tr.requestCode=code('TR')),direction:tr.direction,terminalId:tr.from,cityId:tr.to,format:tr.cls==='group'?'group':'individual',route:transferRouteLabel(),date:tr.date,time:tr.time,cls:trCls().name,pax:tr.pax,passengerNames:tr.passengerNames.map(x=>x.trim()),seat:tr.seat,name:tr.name.trim(),phone:tr.phone.trim(),via:tr.via,address:tr.address.trim(),hotel:tr.hotel.trim(),flight:tr.flight.trim(),note:[tr.address,tr.hotel,tr.flight,tr.passengerNames.join(', ')].filter(Boolean).join(' · '),price:trPrice()};
+ const payload=kind==='bookings'?{code:bk.requestCode||(bk.requestCode=code('AT')),tour:bk.t.id,date:bk.date,time:bk.time,adults:bk.adults,kids:bk.kids,name:bk.contact.name.trim(),phone:bk.contact.phone.trim(),via:bk.contact.via||'WhatsApp',city:departureCity,format:bk.kind,season:bk.seasonName,total:bkTotal(),priceUnit:bk.kind==='individual'?'group':'person',hotel:bk.contact.hotel||'',note:bk.contact.note||''}:{code:tr.requestCode||(tr.requestCode=code('TR')),direction:tr.direction,terminalId:tr.from,cityId:tr.to,format:tr.cls==='group'?'group':'individual',route:transferRouteLabel(),date:tr.date,time:tr.time,cls:trCls().name,pax:tr.pax,passengerNames:tr.passengerNames.map(x=>x.trim()),seat:tr.seat,name:tr.name.trim(),phone:tr.phone.trim(),via:tr.via,address:tr.address.trim(),hotel:tr.hotel.trim(),flight:tr.flight.trim(),children:tr.hasKids?Number(tr.children)||0:0,comment:String(tr.comment||'').trim().slice(0,500),note:[tr.address,tr.hotel,tr.flight,tr.passengerNames.join(', '),tr.hasKids&&tr.children?'детей: '+tr.children:'',String(tr.comment||'').trim()].filter(Boolean).join(' · '),price:trPrice()};
  payload.preferredVehicleId=kind==='bookings'?bk.preferredVehicleId||'':tr.preferredVehicleId||'';saveRequestDraft(kind);payload.requestToken=payload.code;delete payload.code;
  try{await serverQueue;const ack=await api('/api/list',{method:'POST',body:JSON.stringify({kind,items:[payload]})});const accepted=ack.records?.find(x=>x.requestToken===payload.requestToken);if(!accepted?.code||!accepted.status)throw new Error('Сервер не вернул номер и статус заявки. Повторите отправку.');Object.assign(payload,accepted);serverLists[kind]=[...(serverLists[kind]||[]).filter(x=>x.code!==payload.code),payload];myOrdersCache=[{...accepted,kind},...myTripOrders().filter(x=>!(x.code===accepted.code&&x.kind===kind))];myOrdersCacheUserId=serverIdentity?.id;trackOrderUpdates(myOrdersCache||[]);openRequestResult({...accepted,kind});removeRequestDraft(kind,kind==='bookings'?payload.tour:'');if(kind==='bookings'&&bk!==requestState){toast('Заявка принята. Она доступна в личном кабинете.');return}toast('Заявка принята. Условия подтвердит диспетчер.');if(kind==='bookings'){bk.acceptedTotal=payload.total;departureCity=payload.city||departureCity;bk.kind=payload.format||bk.kind;bk.date=payload.date;bk.time=payload.time;bk.adults=payload.adults;bk.kids=payload.kids;bk.code=payload.code;bk.via=payload.via;bk.step='done';renderBooking();$('#booking')?.scrollIntoView({block:'start'})}else{Object.assign(tr,{acceptedPrice:payload.price,date:payload.date,time:payload.time,pax:payload.pax,address:payload.address,direction:payload.direction,from:payload.terminalId,to:payload.cityId,cls:payload.format});tr.code=payload.code;tr.step='done';renderTransfer();$('#trPanel')?.scrollIntoView({block:'start'})}}
  catch(err){if(err?.status===401&&typeof handleExpiredSession==='function'){handleExpiredSession(kind);if(error)error.textContent='Сессия входа истекла. Войдите снова — введённые данные заявки сохранены.';button.textContent='Отправить заявку'}else{if(error)error.textContent='Заявка не отправлена: '+err.message;button.textContent='Повторить отправку'}}finally{window.apsuaRequestSending=false;if(kind==='bookings')bookingSending=false;else transferSending=false;lockedControls.forEach(([el,disabled])=>el.disabled=disabled);button.disabled=false;form.removeAttribute('aria-busy')}
@@ -2979,6 +2979,213 @@ document.addEventListener('click',e=>{const b=e.target.closest?.('[data-fleet-se
 document.addEventListener('click',e=>{if(current!=='map'||!e.target.closest?.('.dist,[data-dist],[data-pin]')||!matchMedia('(max-width:760px)').matches)return;requestAnimationFrame(()=>$('#mapSide')?.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'}))});
 const aboutBeforeContacts=aboutFleetPage;aboutFleetPage=function(...args){const result=aboutBeforeContacts.apply(this,args);const contacts=$('.company-partner-contacts'),target=$('.company-contact .company-contact-actions');if(contacts&&target&&!$('.company-contact .company-partner-contacts')){target.insertAdjacentHTML('beforebegin','<h3 class="company-contact-sub">Почта по направлениям</h3>');target.previousElementSibling.after(contacts)}return result};
 storyNumbers=function(s){const r=storyScore(s),views=Math.max(0,Number(s.views)||0);return `<div class="story-numbers"><span>◉ ${views} ${plural(views,'просмотр','просмотра','просмотров')}</span><span>★ ${r.count?fmtRating(r.average.toFixed(1)):'—'} <small>(${r.count})</small></span></div>`};
+
+/* 27.1 — transfer request step by step. One question at a time; answers fold into rows with a pencil;
+   the last step is a ticket. Routes, tariffs, capacity and the group season come from the site settings,
+   sending goes through the existing /api/list submit handler (sign-in, receipt, dispatcher, payment). */
+const TRW_SVG=(body,accent='')=>`<svg class="trw-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}${accent?`<g class="trw-ico-accent">${accent}</g>`:''}</svg>`;
+const TRW_ICON={
+ meet:TRW_SVG('<path d="M3.8 10.8 2 9l2-4.5 1.1.6c.6.3.9.8.9 1.4s.4 1.2.9 1.4L8 8.5l3-6 1 .5a2 2 0 0 1 1.1 1.5l.7 5.4a2 2 0 0 0 1.1 1.5l4.4 2.2c.4.2.8.6 1 1l.6 1c.5.9-.1 2-1.1 2.1l-1.2.2a2.4 2.4 0 0 1-1.4-.3L4.3 11.2a2 2 0 0 1-.5-.4Z"/>','<path d="M2 22h20"/>'),
+ off:TRW_SVG('<path d="M6.4 17.4 4 17l-2-4 1.1-.6a2 2 0 0 1 1.8 0l.2.1a2 2 0 0 0 1.8 0L8 12 5 6l.9-.5a2 2 0 0 1 2.1.2l4 3a2 2 0 0 0 2.1.2l4.2-2.1a2.4 2.4 0 0 1 1.7-.2L21 7a1.4 1.4 0 0 1 .9 2l-.4.8a2.4 2.4 0 0 1-1.1 1L7.6 17.2a2 2 0 0 1-1.2.2Z"/>','<path d="M2 22h20"/>'),
+ plane:TRW_SVG('<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2Z"/>'),
+ rail:TRW_SVG('<path d="M9 19c-2.8 0-5-2.2-5-5v-4a8 8 0 0 1 16 0v4c0 2.8-2.2 5-5 5Z"/><path d="m8 19-2 3m10-3 2 3"/>','<path d="M8 3.1V7a4 4 0 0 0 8 0V3.1M9 15h.01M15 15h.01"/>'),
+ city:TRW_SVG('<path d="M20 10c0 5-5.5 10.2-7.4 11.8a1 1 0 0 1-1.2 0C9.5 20.2 4 15 4 10a8 8 0 0 1 16 0"/>','<circle cx="12" cy="10" r="3"/>'),
+ car:TRW_SVG('<path d="m21 8-2 2-1.5-3.7A2 2 0 0 0 15.6 5H8.4a2 2 0 0 0-1.9 1.3L5 10 3 8"/><rect x="3" y="10" width="18" height="8" rx="2"/><path d="M5 18v2m14-2v2"/>','<path d="M7 14h.01M17 14h.01"/>'),
+ bus:TRW_SVG('<path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2s-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3M9 18h5M2 12h19.6"/><circle cx="7" cy="18" r="2"/><circle cx="16" cy="18" r="2"/>','<path d="M8 6v6m7-6v6"/>'),
+ people:TRW_SVG('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>','<path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>'),
+ child:TRW_SVG('<path d="M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5S14.6 8 13.5 8c-.8 0-1.5-.4-1.5-1"/>','<path d="M9 12h.01M15 12h.01M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5"/>'),
+ seat:TRW_SVG('<path d="M8 3h3a2 2 0 0 1 2 2v6.5l3.6 1.6A2.4 2.4 0 0 1 18 15.3V18H8.5A3.5 3.5 0 0 1 5 14.5V6a3 3 0 0 1 3-3Z"/><path d="M5 21h14"/>','<path d="M9 12h4"/>'),
+ phone:TRW_SVG('<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.4 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/>'),
+ calendar:TRW_SVG('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>','<path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>'),
+ home:TRW_SVG('<path d="M3 10.5 12 3l9 7.5M5 9v11h14V9"/>','<path d="M10 20v-5h4v5"/>'),
+ note:TRW_SVG('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>','<path d="M8 9h8M8 13h5"/>'),
+ route:TRW_SVG('<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/>','<circle cx="18" cy="5" r="3"/>'),
+ edit:TRW_SVG('<path d="M21.2 6.8a2.8 2.8 0 0 0-4-4L3.8 16.2a2 2 0 0 0-.5.8l-1.3 4.4a.5.5 0 0 0 .6.6l4.4-1.3a2 2 0 0 0 .8-.5z"/><path d="m15 5 4 4"/>'),
+ check:TRW_SVG('<path d="M20 6 9 17l-5-5"/>'),
+ back:TRW_SVG('<path d="m15 18-6-6 6-6"/>'),
+ next:TRW_SVG('<path d="M5 12h14m-7-7 7 7-7 7"/>'),
+ warn:TRW_SVG('<circle cx="12" cy="12" r="10"/>','<path d="M12 7v6m0 4h.01"/>')
+};
+const TRW_KEYS=['dir','route','when','flight','addr','fmt','pax','contact','ticket'];
+const TRW_ROW_TITLE={dir:'Направление',route:'Маршрут',when:'Дата и время',flight:'Рейс',addr:'Адрес',fmt:'Тип трансфера',pax:'Пассажиры',contact:'Контакты'};
+const TRW_ROW_ICON={dir:'route',route:'city',when:'calendar',flight:'plane',addr:'home',fmt:'car',pax:'people',contact:'phone'};
+let trwTimer=0,trwMoved=false,trwFocus='';
+// Abkhazia lives on Moscow time (UTC+3): dates, «today» and the 12-hour rule use it, not the device clock.
+function trwMskISO(ms=Date.now()){return new Date(ms+3*3600000).toISOString()}
+function trwMskDay(offset=0){return trwMskISO(Date.now()+offset*86400000).slice(0,10)}
+function trwEarliestDeparture(now=Date.now()){const step=5*60000,at=Math.ceil((now+12*3600000)/step)*step,s=trwMskISO(at);return {date:s.slice(0,10),time:s.slice(11,16)}}
+function trwDayWord(date){return date===trwMskDay(0)?'сегодня':date===trwMskDay(1)?'завтра':shortDate(date)}
+function trwState(){
+ const wz=tr.wz&&typeof tr.wz==='object'?tr.wz:(tr.wz={});
+ if(!TRW_KEYS.includes(wz.step))wz.step='dir';if(!Array.isArray(wz.done))wz.done=[];if(!wz.answered||typeof wz.answered!=='object')wz.answered={};
+ tr.children=Math.max(0,Number(tr.children)||0);tr.hasKids=!!tr.hasKids;tr.comment=String(tr.comment||'');tr.pax=Math.max(1,Number(tr.pax)||1);
+ if(!Array.isArray(tr.passengerNames))tr.passengerNames=[];syncTransferPassengerNames();
+ if(!trwVisible().includes(wz.step))wz.step=trwVisible().find(k=>!wz.done.includes(k))||'ticket';
+ return wz}
+function trwAirport(){const t=trFrom();return /аэропорт/i.test(t?.name||'')||['sochi','sukhum'].includes(t?.id)}
+function trwVisible(){return TRW_KEYS.filter(k=>k!=='flight'||trwAirport())}
+function trwTerminalIcon(t){return /аэропорт/i.test(t.name)?TRW_ICON.plane:TRW_ICON.rail}
+function trwRate(city,format){return rateFor(city,tr.from,format)}
+function trwPassengerOk(name){const v=String(name||'').trim();return v.length>=3&&v.split(/\s+/).length>=2}
+function trwError(key){
+ const a=trwState().answered,cls=trCls();
+ if(key==='dir')return a.dir?'':'Выберите: встретить или проводить.';
+ if(key==='route')return a.from&&a.to&&C.transfer.from.some(x=>x.id===tr.from)&&C.transfer.to.some(x=>x.id===tr.to)?'':tr.direction==='departure'?'Выберите, откуда выезжаете и куда едете.':'Выберите, где вас встретить и куда отвезти.';
+ if(key==='when'){
+  if(!/^\d{4}-\d\d-\d\d$/.test(tr.date||'')||!a.date)return 'Выберите дату.';
+  if(!/^\d\d:\d\d$/.test(tr.time||'')||!a.time)return tr.direction==='departure'?'Укажите время выезда.':'Укажите время прибытия.';
+  if(tr.date<trwMskDay(0))return 'Эта дата уже прошла. Выберите другую.';
+  if(tr.direction==='departure'&&!departureDeadlineOK(tr.date,tr.time)){const e=trwEarliestDeparture();return `До выезда меньше 12 часов. Ближайший возможный выезд — ${trwDayWord(e.date)} с ${e.time}.`}
+  if(tr.direction!=='departure'&&Date.parse(tr.date+'T'+tr.time+':00+03:00')<Date.now())return 'Это время уже прошло. Проверьте дату и время.';
+  return ''}
+ if(key==='addr'){const v=tr.address.trim();return !v?'Укажите адрес одной строкой.':v.length>300?'Адрес слишком длинный — до 300 символов.':''}
+ if(key==='fmt'){if(!a.fmt)return 'Выберите тип трансфера.';if(tr.cls==='group'&&!transferGroupAvailable(tr.date))return 'На эту дату групповой трансфер не работает. Выберите индивидуальный.';return ''}
+ if(key==='pax'){
+  if(tr.pax>cls.max)return `${cls.name} трансфер — не больше ${cls.max} пассажиров. Уменьшите число или выберите другой тип.`;
+  const bad=tr.passengerNames.findIndex(n=>!trwPassengerOk(n));if(bad>=0)return `Укажите фамилию и имя пассажира ${bad+1}.`;
+  if(tr.hasKids&&(tr.children<1||tr.children>tr.pax))return 'Детей — от 1 до общего числа пассажиров.';
+  return ''}
+ if(key==='contact'){if(!phoneOk(tr.phone)||String(tr.phone).replace(/\D/g,'').length>15)return 'Укажите телефон: от 10 до 15 цифр.';if(!['WhatsApp','Telegram','MAX'].includes(tr.via))return 'Выберите, где вам удобнее переписываться.';return ''}
+ return ''}
+function trwFirstInvalid(){return trwVisible().find(k=>k!=='ticket'&&trwError(k))||''}
+function trwPriceParts(){const price=trPrice();if(price===null)return {price:null,line:'Цену подтвердит диспетчер',sub:'Для этого маршрута тариф уточняется'};const base=rateFor(trTo(),tr.from,trCls().id),seat=tr.seat?Number(C.transfer.seat)||0:0;return {price,line:rub(price),sub:(tr.cls==='group'?`${rub(base)} × ${tr.pax} ${plural(tr.pax,'пассажир','пассажира','пассажиров')}`:'За машину')+(seat?` + кресло ${rub(seat)}`:'')}}
+function trwRowValue(key){
+ if(key==='dir')return tr.direction==='departure'?'Проводить':'Встретить';
+ if(key==='route')return transferRouteLabel();
+ if(key==='when')return `${shortDate(tr.date)}, ${tr.time} · ${tr.direction==='departure'?'выезд':'прибытие'}`;
+ if(key==='flight')return tr.flight.trim()||'Не указан';
+ if(key==='addr')return tr.address.trim();
+ if(key==='fmt')return trCls().name;
+ if(key==='pax')return `${tr.pax} ${plural(tr.pax,'пассажир','пассажира','пассажиров')}${tr.hasKids&&tr.children?`, из них детей: ${tr.children}`:''}`;
+ if(key==='contact')return [tr.phone.trim(),tr.via,tr.seat?'детское кресло':''].filter(Boolean).join(' · ');
+ return ''}
+function trwTile({key,value,icon,title,text='',price='',selected=false,disabled=false,label=''}){return `<button type="button" class="trw-tile${selected?' is-selected':''}" data-trw-pick="${key}" data-value="${esc(value)}" role="radio" aria-checked="${selected}" ${disabled?'disabled aria-disabled="true"':''} ${label?`aria-label="${esc(label)}"`:''}><span class="trw-tile-ico">${icon}</span><span class="trw-tile-copy"><b>${esc(title)}</b>${text?`<small>${esc(text)}</small>`:''}${price?`<em class="num">${esc(price)}</em>`:''}</span><span class="trw-tile-check" aria-hidden="true">${TRW_ICON.check}</span></button>`}
+function trwNotice(text,kind='warn'){return `<p class="trw-notice is-${kind}" role="note">${TRW_ICON.warn}<span>${text}</span></p>`}
+function trwSwitch(id,on,title,text,icon){return `<button type="button" class="trw-switch" role="switch" aria-checked="${on}" data-trw-switch="${id}"><span class="trw-switch-ico">${icon}</span><span class="trw-switch-copy"><b>${esc(title)}</b>${text?`<small>${esc(text)}</small>`:''}</span><span class="trw-switch-knob" aria-hidden="true"></span></button>`}
+function trwStepper(id,value,min,max,label){return `<div class="trw-stepper" role="group" aria-label="${esc(label)}"><button type="button" data-trw-step="${id}" data-delta="-1" aria-label="Меньше" ${value<=min?'disabled':''}>−</button><output class="num" aria-live="polite">${value}</output><button type="button" data-trw-step="${id}" data-delta="1" aria-label="Больше" ${value>=max?'disabled':''}>+</button></div>`}
+function trwQuestion(key){
+ const dep=tr.direction==='departure',a=trwState().answered,T=C.transfer;
+ if(key==='dir')return `<h2 tabindex="-1">Встретить или проводить?</h2><p class="trw-hint">Выберите направление поездки.</p><div role="radiogroup" class="trw-tiles is-two">${trwTile({key:'dir',value:'arrival',icon:TRW_ICON.meet,title:'Встретить',text:'Встретим в аэропорту или на вокзале и отвезём в Абхазию',selected:a.dir&&!dep})}${trwTile({key:'dir',value:'departure',icon:TRW_ICON.off,title:'Проводить',text:'Отвезём из Абхазии к самолёту или поезду',selected:a.dir&&dep})}</div>${a.dir&&dep?trwNotice('<b>Заявку на проводы нужно оставить минимум за 12 часов до выезда.</b> Время проверим по местному времени Абхазии.'):''}`;
+ if(key==='route'){
+  const terminals=T.from.map(t=>trwTile({key:'from',value:t.id,icon:trwTerminalIcon(t),title:t.name,selected:a.from&&tr.from===t.id})).join('');
+  const cities=T.to.map(c=>{const ind=a.from?trwRate(c,'individual'):null,grp=a.from?trwRate(c,'group'):null,price=!a.from?'':ind!==null?`машина ${rub(ind)}`:grp!==null?`${rub(grp)} / чел.`:'цена по запросу';return trwTile({key:'to',value:c.id,icon:TRW_ICON.city,title:c.name,price,selected:a.to&&tr.to===c.id})}).join('');
+  const terminalGroup=`<fieldset class="trw-group"><legend>${dep?'Куда едем':'Где вас встретить'}</legend><div role="radiogroup" class="trw-tiles is-compact">${terminals}</div></fieldset>`,cityGroup=`<fieldset class="trw-group"><legend>${dep?'Откуда выезжаем':'Куда отвезти'}</legend><div role="radiogroup" class="trw-tiles is-compact">${cities}</div>${a.from?'':'<p class="trw-caption">Цены появятся после выбора аэропорта или вокзала.</p>'}</fieldset>`;
+  return `<h2 tabindex="-1">Куда едем?</h2><p class="trw-hint">${dep?'Выберите место в Абхазии и аэропорт или вокзал.':'Выберите аэропорт или вокзал и место в Абхазии.'}</p>${dep?cityGroup+terminalGroup:terminalGroup+cityGroup}`}
+ if(key==='when'){
+  const e=trwEarliestDeparture(),err=a.date&&a.time?trwError('when'):'';
+  return `<h2 tabindex="-1">${dep?'Когда выезжаем?':'Когда вас встретить?'}</h2><p class="trw-hint">${dep?'Дата и время выезда из Абхазии.':'Дата и время прибытия самолёта или поезда.'}</p>${dep?trwNotice(`Проводы — минимум за 12 часов до выезда. Ближайший возможный выезд: <b>${esc(trwDayWord(e.date))} с ${esc(e.time)}</b>.`):''}
+  <div class="trw-field"><span id="trw-date-label">Дата ${dep?'выезда':'прибытия'}</span><button type="button" class="trw-date${a.date?' is-set':''}" data-pop-open="trdate" data-trw-other-date aria-expanded="false" aria-haspopup="dialog" aria-labelledby="trw-date-label trw-date-value">${TRW_ICON.calendar}<b id="trw-date-value">${a.date&&tr.date?esc(human(fromIso(tr.date))):'Выберите дату'}</b></button></div>
+  <label class="trw-field trw-time"><span>${dep?'Время выезда из Абхазии':'Время прибытия рейса или поезда'}</span><input class="input num" id="tr-time" type="time" value="${a.time?esc(tr.time):''}" required><small class="trw-tag">Местное время · МСК, UTC+3</small></label>${err?`<p class="trw-inline-error" role="alert">${esc(err)}</p>`:''}`}
+ if(key==='flight')return `<h2 tabindex="-1">Какой номер рейса?</h2><p class="trw-hint">Необязательно. Номер поможет водителю, если рейс задержится.</p><label class="trw-field"><span>Номер рейса</span><input class="input" id="tr-flight" autocomplete="off" autocapitalize="characters" maxlength="120" enterkeyhint="next" value="${esc(tr.flight)}" placeholder="Например, SU 1120"></label><button type="button" class="trw-link" data-trw-skip>Пропустить</button>`;
+ if(key==='addr'){const hotels=transferHotels();return `<h2 tabindex="-1">${dep?'Откуда забираем?':'Куда отвезти?'}</h2><p class="trw-hint">Город, улица, номер дома или название отеля — одной строкой.</p><label class="trw-field"><span>Полный адрес</span><input class="input" id="tr-address" maxlength="300" autocomplete="street-address" enterkeyhint="next" ${hotels.length?'list="trwHotels"':''} value="${esc(tr.address)}" placeholder="${esc(trTo().name)}, ул. Лакоба, 109 или название отеля"></label>${hotels.length?`<datalist id="trwHotels">${hotels.map(h=>`<option value="${esc(h.name+', '+h.address)}"></option>`).join('')}</datalist><p class="trw-caption">Начните вводить название — подскажем адрес отеля.</p>`:''}`}
+ if(key==='fmt'){const city=trTo(),groupOK=transferGroupAvailable(tr.date),f=transferFormats(),ind=trwRate(city,'individual'),grp=trwRate(city,'group'),p=T.groupPolicy||{},season=monthDayLabel(p.start)&&monthDayLabel(p.end)?`Работает с ${monthDayLabel(p.start)} по ${monthDayLabel(p.end)}`:'Сейчас не работает';
+  return `<h2 tabindex="-1">Как поедем?</h2><p class="trw-hint">Выберите тип трансфера.</p><div role="radiogroup" class="trw-tiles is-two">${trwTile({key:'fmt',value:'individual',icon:TRW_ICON.car,title:'Индивидуальный',text:`Машина только для вас · до ${f[0].max} пассажиров`,price:ind!==null?`${rub(ind)} за машину`:'Цена по запросу',selected:a.fmt&&tr.cls!=='group'})}${trwTile({key:'fmt',value:'group',icon:TRW_ICON.bus,title:'Групповой',text:groupOK?`Вместе с другими пассажирами · до ${f[1].max}`:season,price:groupOK?(grp!==null?`${rub(grp)} за человека`:'Цена по запросу'):'',selected:a.fmt&&tr.cls==='group'&&groupOK,disabled:!groupOK,label:groupOK?'':'Групповой трансфер недоступен на выбранную дату. '+season})}</div>${groupOK?'':`<p class="trw-caption">На ${esc(shortDate(tr.date))} доступен только индивидуальный трансфер.</p>`}`}
+ if(key==='pax'){const max=trCls().max;return `<h2 tabindex="-1">Кто поедет?</h2><p class="trw-hint">Дети входят в общее число пассажиров.</p><div class="trw-row-control"><span class="trw-row-ico">${TRW_ICON.people}</span><span class="trw-row-copy"><b>Всего пассажиров</b><small>${esc(trCls().name)} — до ${max}</small></span>${trwStepper('pax',tr.pax,1,max,'Количество пассажиров')}</div><fieldset class="trw-names"><legend>Фамилия и имя каждого пассажира</legend>${tr.passengerNames.map((n,i)=>`<label class="trw-field"><span>Пассажир ${i+1}</span><input class="input" id="trw-name-${i}" data-transfer-passenger-name="${i}" value="${esc(n)}" maxlength="120" autocomplete="${i?'off':'name'}" autocapitalize="words" enterkeyhint="${i<tr.pax-1?'next':'done'}" placeholder="Фамилия Имя Отчество"></label>`).join('')}</fieldset>${trwSwitch('kids',tr.hasKids,'С нами будут дети','',TRW_ICON.child)}${tr.hasKids?`<div class="trw-row-control is-nested"><span class="trw-row-copy"><b>Сколько детей?</b><small>Из ${tr.pax} ${plural(tr.pax,'пассажира','пассажиров','пассажиров')}</small></span>${trwStepper('kids',tr.children,1,tr.pax,'Количество детей')}</div>`:''}`}
+ if(key==='contact'){const seat=Number(T.seat)||0;return `<h2 tabindex="-1">Как с вами связаться?</h2><p class="trw-hint">Диспетчер напишет вам, чтобы подтвердить поездку.</p><label class="trw-field"><span>Телефон</span><input class="input num" id="tr-phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="40" enterkeyhint="next" value="${esc(tr.phone)}" placeholder="+7 900 000-00-00"></label><div class="trw-label" id="trw-via-label">Где удобнее переписываться</div><div class="trw-seg" role="radiogroup" aria-labelledby="trw-via-label">${['WhatsApp','Telegram','MAX'].map(v=>`<button type="button" role="radio" data-trw-via="${v}" aria-checked="${tr.via===v}">${v}</button>`).join('')}</div>${trwSwitch('seat',tr.seat,'Детское кресло',seat?`+ ${rub(seat)}`:'Без доплаты',TRW_ICON.seat)}<label class="trw-field"><span>Дополнительная информация · необязательно</span><textarea class="input" id="trw-comment" rows="3" maxlength="500" placeholder="Багаж, животные, детали встречи">${esc(tr.comment)}</textarea></label>`}
+ return ''}
+function trwTicket(){
+ const date=fromIso(tr.date),months=['ЯНВ','ФЕВ','МАР','АПР','МАЙ','ИЮН','ИЮЛ','АВГ','СЕН','ОКТ','НОЯ','ДЕК'],price=trwPriceParts(),names=tr.passengerNames.map(x=>x.trim()).filter(Boolean),edit=(key,title)=>`<button class="trw-edit" type="button" data-trw-go="${key}" aria-label="Изменить: ${esc(title)}">${TRW_ICON.edit}</button>`;
+ const fact=(key,title,value,wide=false)=>`<div class="${wide?'apsua-ticket-wide ':''}trw-fact"><dt>${esc(title)}</dt><dd>${value}</dd>${edit(key,title)}</div>`;
+ const facts=[fact('dir','Направление',esc(trwRowValue('dir'))),fact('when',tr.direction==='departure'?'Выезд':'Прибытие',`${esc(shortDate(tr.date))} · ${esc(tr.time)}`),trwAirport()?fact('flight','Рейс',esc(tr.flight.trim()||'Не указан')):'',fact('fmt','Тип',esc(trCls().name)),fact('addr',tr.direction==='departure'?'Откуда забираем':'Куда отвезти',esc(tr.address.trim()),true),fact('pax','Пассажиры',`${esc(names.join(', '))}<small>Всего ${tr.pax}${tr.hasKids&&tr.children?`, из них детей: ${tr.children}`:', без детей'}</small>`,true),fact('contact','Контакты',`${esc(tr.phone.trim())} · ${esc(tr.via)}<small>${tr.seat?'Детское кресло':'Без детского кресла'}${tr.comment.trim()?' · '+esc(tr.comment.trim()):''}</small>`,true)].join('');
+ return `<article class="apsua-ticket transfer-booking-ticket trw-ticket" data-ticket-kind="transfers" data-ticket-status="pending" data-ticket-visual="intact"><div class="apsua-ticket-paper"><section class="apsua-ticket-main"><header class="apsua-ticket-heading"><span class="apsua-ticket-kind"><span class="apsua-ticket-badge">${orderTypeIcon('transfers')}</span>ТРАНСФЕР</span>${edit('route','Маршрут')}</header><h3 class="apsua-ticket-title">${esc(transferRouteLabel())}</h3><small class="apsua-ticket-code">Предварительный билет</small><dl class="apsua-ticket-facts">${facts}</dl><div class="apsua-ticket-total"><b class="num">${esc(price.line)}</b><span>Итого за всех · ${esc(price.sub)}</span></div></section><aside class="apsua-ticket-stub" aria-label="Дата поездки"><div class="apsua-ticket-stub-top"><span>Апсуа Тур</span><small>ЗАЯВКА</small></div><div class="apsua-ticket-stub-date"><b>${String(date.getDate()).padStart(2,'0')}</b><span>${months[date.getMonth()]||''}</span></div><span class="apsua-ticket-stub-foot">ТРАНСФЕР · ${date.getFullYear()}</span></aside></div></article>`}
+function trwBarHTML(key){
+ const list=trwVisible(),i=list.indexOf(key),wz=trwState(),price=key!=='ticket'&&wz.answered.fmt&&wz.answered.from&&wz.answered.to?trwPriceParts():null,editing=wz.done.includes('ticket')&&key!=='ticket';
+ const label=key==='ticket'?'Отправить заявку':editing?'Сохранить':key==='contact'?'Проверить заявку':'Далее';
+ return `<div class="trw-bar">${i>0?`<button type="button" class="trw-back" data-trw-back aria-label="Назад">${TRW_ICON.back}</button>`:''}<div class="trw-bar-price" aria-live="polite">${price?`<b class="num">${esc(price.line)}</b><small>${price.price!==null?'Итого за всех':'Тариф уточнит диспетчер'}</small>`:''}</div><button type="${key==='ticket'?'submit':'button'}" class="btn btn-accent trw-next" ${key==='ticket'?'':'data-trw-next'}>${esc(label)}${key==='ticket'?'':TRW_ICON.next}</button></div>`}
+function trwAsideHTML(){
+ const wz=trwState(),a=wz.answered,price=a.fmt&&a.from&&a.to?trwPriceParts():null,row=(title,value)=>value?`<div><dt>${esc(title)}</dt><dd>${esc(value)}</dd></div>`:'';
+ return `<p class="eyebrow">Ваша поездка</p><dl class="trw-aside-list">${row('Направление',a.dir?trwRowValue('dir'):'')}${row('Маршрут',a.from&&a.to?transferRouteLabel():'')}${row('Дата и время',a.date&&a.time?trwRowValue('when'):'')}${row('Тип',a.fmt?trCls().name:'')}${row('Пассажиры',wz.done.includes('pax')?trwRowValue('pax'):'')}</dl><div class="trw-aside-total"><span>Итого за всех</span><b class="num">${price?esc(price.line):'—'}</b>${price?`<small>${esc(price.sub)}</small>`:'<small>Появится после выбора маршрута и типа</small>'}</div><p class="rate-note">Цена — по действующим тарифам сайта. Отправка заявки ещё не бронь: условия подтвердит диспетчер.</p>`}
+function trwDoneHTML(){
+ const price=Object.hasOwn(tr,'acceptedPrice')?(tr.acceptedPrice===null?'Цену подтвердит диспетчер':rub(tr.acceptedPrice)):trwPriceParts().line;
+ return `<div class="trw-done" role="status"><span class="trw-seal">${TRW_ICON.check}</span><h2 tabindex="-1">Заявка отправлена</h2><span class="code">${esc(tr.code||'')}</span><div class="trw-done-summary"><b>${esc(transferRouteLabel())}</b><span>${esc(shortDate(tr.date))}, ${esc(tr.time)} · ${esc(trCls().name)} · ${tr.pax} ${plural(tr.pax,'пассажир','пассажира','пассажиров')}</span><span>${esc(tr.address)}</span><span class="num">${esc(price)}</span></div><p class="trw-hint">Диспетчер проверит заявку и напишет вам. После подтверждения придёт QR для оплаты, а за 24 часа до выезда — водитель, машина и госномер.</p><div class="trw-done-actions">${tr.direction!=='departure'?`<button type="button" class="btn btn-accent" data-trw-return>${TRW_ICON.off}Оформить обратный трансфер</button>`:''}<a class="btn btn-ghost" href="#/orders">Мои заявки</a><button type="button" class="btn btn-ghost" data-trw-new>Новая заявка</button></div></div>`}
+function trwPrefill(){
+ const wz=trwState();if(wz.prefilled||!serverIdentity)return;wz.prefilled=true;
+ const prefs=typeof accountContactPreferences==='function'?accountContactPreferences():{};if(!tr.phone&&prefs.phone)tr.phone=prefs.phone;if(!tr.via&&prefs.via)tr.via=prefs.via;
+ const name=typeof meaningfulName==='function'?meaningfulName(serverIdentity.name||''):'';if(name&&!String(tr.passengerNames[0]||'').trim())tr.passengerNames[0]=name}
+renderTransfer=function(){
+ const p=$('#trPanel');if(!p)return;ensureTransferConfig();
+ if(!C.transfer.from.some(x=>x.id===tr.from))tr.from=C.transfer.from[0]?.id||'';if(!C.transfer.to.some(x=>x.id===tr.to))tr.to=C.transfer.to[0]?.id||'';
+ if(tr.cls!=='group')tr.cls='individual';
+ const wz=trwState();trwPrefill();
+ const layout=p.closest?.('.tr-layout');layout?.classList?.add('trw-layout');
+ const aside=$('#trRates');if(aside){aside.classList?.add('trw-aside');aside.innerHTML=tr.step==='done'?'':trwAsideHTML();aside.hidden=tr.step==='done'}
+ if(tr.step==='done'){p.innerHTML=trwDoneHTML();trwAfterRender(true);return}
+ const list=trwVisible(),key=wz.step,i=list.indexOf(key),moved=trwMoved;trwMoved=false;
+ let body='';
+ if(key==='ticket')body=`<section class="trw-step is-ticket${moved?' is-entering':''}" aria-labelledby="trw-q"><h2 id="trw-q" tabindex="-1">Проверьте поездку</h2><p class="trw-hint">Всё верно? Нажмите на карандаш, чтобы исправить пункт.</p>${trwTicket()}<p class="trw-caption">Цена — по действующим тарифам сайта; окончательную стоимость подтвердит диспетчер. Отправка заявки ещё не означает подтверждённую бронь.</p><label class="check trw-consent"><input type="checkbox" id="tr-ok" name="terms" aria-describedby="te-ok" ${v17TransferConsent?'checked':''}><span>${V17_CONSENT}</span></label><small class="err" id="te-ok" aria-live="polite"></small></section>`;
+ else body=list.filter(k=>k!=='ticket').map(k=>{
+  if(k===key)return `<section class="trw-step${moved?' is-entering':''}" aria-labelledby="trw-q" data-trw-step-key="${k}"><span class="trw-count">Шаг ${i+1} из ${list.length}</span>${trwQuestion(k).replace('<h2 tabindex="-1">','<h2 id="trw-q" tabindex="-1">')}</section>`;
+  if(!wz.done.includes(k))return '';
+  return `<button type="button" class="trw-row" data-trw-go="${k}" aria-label="${esc(TRW_ROW_TITLE[k]+': '+trwRowValue(k)+'. Изменить')}"><span class="trw-row-ico">${TRW_ICON[TRW_ROW_ICON[k]]}</span><span class="trw-row-copy"><small>${esc(TRW_ROW_TITLE[k])}</small><b>${esc(trwRowValue(k))}</b></span><span class="trw-row-edit">${TRW_ICON.edit}</span></button>`}).join('');
+ const progress=Math.round((i+1)/list.length*100);
+ p.innerHTML=`<form id="trForm" class="trw" novalidate>${wz.done.length?'':draftOfferHTML('transfers')}<div class="trw-progress" role="progressbar" aria-label="Заявка на трансфер" aria-valuemin="1" aria-valuemax="${list.length}" aria-valuenow="${i+1}" aria-valuetext="Шаг ${i+1} из ${list.length}"><i style="width:${progress}%"></i></div><div class="trw-flow">${body}</div><p id="tr-error" class="trw-error" role="alert"></p>${trwBarHTML(key)}</form>`;
+ trwAfterRender(moved)};
+function trwAfterRender(moved){
+ v4TransferBar();
+ if(trwFocus){const el=$(trwFocus);trwFocus='';if(el&&!el.disabled){el.focus({preventScroll:true});return}}
+ if(!moved)return;
+ const step=$('#trPanel .trw-step')||$('#trPanel .trw-done'),heading=step?.querySelector('h2');if(!step)return;
+ const top=step.getBoundingClientRect().top;
+ if(top<70||top>innerHeight*.5)step.scrollIntoView({block:'start',behavior:reduce?'auto':'smooth'});
+ heading?.focus({preventScroll:true})}
+function trwCapture(){
+ const time=$('#tr-time');if(time&&/^\d\d:\d\d$/.test(time.value)){tr.time=time.value;trwState().answered.time=true}
+ const comment=$('#trw-comment');if(comment)tr.comment=comment.value;
+ const address=$('#tr-address');if(address){tr.address=address.value;const hotel=transferHotels().find(h=>address.value===h.name+', '+h.address||address.value===h.name);tr.hotel=hotel?hotel.name:''}
+ for(const [k,id]of [['phone','tr-phone'],['flight','tr-flight']]){const el=$('#'+id);if(el)tr[k]=el.value}
+ if($('[data-transfer-passenger-name]'))captureTransferPassengerNames()}
+function trwGo(key,{focus=''}={}){trwCapture();clearTimeout(trwTimer);const wz=trwState();if(!trwVisible().includes(key))return;wz.step=key;trwMoved=true;trwFocus=focus;renderTransfer();saveRequestDraft('transfers')}
+function trwShowError(message){const inline=$('#trPanel .trw-inline-error'),box=inline&&inline.textContent===message?inline:$('#tr-error');if(box&&box!==inline)box.textContent=message;const step=$('#trPanel .trw-step');step?.classList.remove('is-shake');void step?.offsetWidth;step?.classList.add('is-shake');
+ const field=$$('#trPanel .trw-step input:not([type=checkbox]):not(.select-hidden),#trPanel .trw-step textarea').find(f=>!f.value.trim()&&f.id!=='trw-comment'&&f.id!=='tr-flight');if(field)field.focus({preventScroll:true});box?.scrollIntoView({block:'center',behavior:reduce?'auto':'smooth'})}
+function trwNext(){
+ trwCapture();clearTimeout(trwTimer);const wz=trwState(),key=wz.step,list=trwVisible(),err=trwError(key);
+ if(err){trwShowError(err);return false}
+ if(!wz.done.includes(key))wz.done.push(key);
+ const after=list.slice(list.indexOf(key)+1).filter(k=>k!=='ticket'),target=wz.done.includes('ticket')?trwFirstInvalid()||'ticket':after.find(k=>!wz.done.includes(k)||trwError(k))||'ticket';
+ if(target==='ticket'&&!wz.done.includes('ticket'))wz.done.push('ticket');
+ trwGo(target);return true}
+function trwBack(){const list=trwVisible(),i=list.indexOf(trwState().step);if(i>0)trwGo(list[i-1])}
+function trwSchedule(){clearTimeout(trwTimer);trwTimer=setTimeout(()=>{if(current==='transfer'&&$('#trForm.trw')&&!trwError(trwState().step))trwNext()},reduce?120:320)}
+function trwPick(key,value){
+ const wz=trwState(),a=wz.answered,editing=wz.done.includes(trwState().step);trwCapture();
+ trwFocus=`[data-trw-pick="${key}"][data-value="${value}"]`;
+ if(key==='dir'){tr.direction=value;a.dir=true;renderTransfer();if(value==='arrival'&&!editing)trwSchedule();return}
+ if(key==='from'){tr.from=value;a.from=true;if(!trwAirport())tr.flight=''}
+ if(key==='to'){if(tr.to!==value){tr.hotel='';if(a.to)tr.address=''}tr.to=value;a.to=true}
+ if(key==='fmt'){tr.cls=value==='group'?'group':'individual';a.fmt=true;if(!editing){renderTransfer();trwSchedule();return}}
+ renderTransfer();
+ if(a.from&&a.to&&!editing)trwSchedule()}
+function trwFormatPhone(value){const digits=value.replace(/\D/g,'');if(!/^[78]/.test(digits)||digits.length>11||(value.trim().startsWith('+')&&digits[0]!=='7'))return value;const d='7'+digits.slice(1);let out='+7';if(d.length>1)out+=' '+d.slice(1,4);if(d.length>4)out+=' '+d.slice(4,7);if(d.length>7)out+='-'+d.slice(7,9);if(d.length>9)out+='-'+d.slice(9,11);return out}
+function trwNewRequest(keepPeople){const keep=keepPeople?{phone:tr.phone,via:tr.via,passengerNames:tr.passengerNames.slice(),pax:tr.pax,hasKids:tr.hasKids,children:tr.children,seat:tr.seat}:{phone:tr.phone,via:tr.via};for(const k of ['requestCode','code','acceptedPrice'])delete tr[k];Object.assign(tr,{step:'form',flight:'',comment:'',time:'',date:''},keep);if(!keepPeople){Object.assign(tr,{pax:1,passengerNames:[''],hasKids:false,children:0,seat:false,address:'',hotel:'',direction:'arrival',cls:'individual'})}tr.wz={step:'dir',done:[],answered:{},prefilled:!keepPeople?false:true};v17TransferConsent=false}
+document.addEventListener('click',e=>{
+ if(!e.target.closest?.('#trPanel'))return;
+ const pick=e.target.closest('[data-trw-pick]');if(pick){if(!pick.disabled)trwPick(pick.dataset.trwPick,pick.dataset.value);return}
+ if(e.target.closest('[data-trw-next]')){e.preventDefault();trwNext();return}
+ if(e.target.closest('[data-trw-back]')){trwBack();return}
+ if(e.target.closest('[data-trw-skip]')){tr.flight='';const f=$('#tr-flight');if(f)f.value='';trwNext();return}
+ const go=e.target.closest('[data-trw-go]');if(go){trwGo(go.dataset.trwGo);return}
+ const day=e.target.closest('[data-trw-date]');if(day){trwCapture();tr.date=day.dataset.trwDate;trwState().answered.date=true;trwFocus=`[data-trw-date="${day.dataset.trwDate}"]`;renderTransfer();saveRequestDraft('transfers');return}
+ const via=e.target.closest('[data-trw-via]');if(via){trwCapture();tr.via=via.dataset.trwVia;$$('[data-trw-via]').forEach(b=>b.setAttribute('aria-checked',String(b===via)));$('#tr-error')&&($('#tr-error').textContent='');trwUpdateLive();saveRequestDraft('transfers');return}
+ const sw=e.target.closest('[data-trw-switch]');if(sw){trwCapture();const id=sw.dataset.trwSwitch;if(id==='kids'){tr.hasKids=!tr.hasKids;if(tr.hasKids&&!tr.children)tr.children=1;if(!tr.hasKids)tr.children=0;trwFocus='[data-trw-switch="kids"]';renderTransfer()}else{tr.seat=!tr.seat;sw.setAttribute('aria-checked',String(tr.seat));trwUpdateLive()}saveRequestDraft('transfers');return}
+ const st=e.target.closest('[data-trw-step]');if(st){trwCapture();const d=Number(st.dataset.delta),id=st.dataset.trwStep;if(id==='pax'){tr.pax=Math.min(trCls().max,Math.max(1,tr.pax+d));syncTransferPassengerNames();tr.children=Math.min(tr.children,tr.pax)}else tr.children=Math.min(tr.pax,Math.max(1,tr.children+d));trwFocus=`[data-trw-step="${id}"][data-delta="${d}"]`;renderTransfer();saveRequestDraft('transfers');return}
+ if(e.target.closest('[data-trw-return]')){const from=tr.from,to=tr.to;trwNewRequest(true);Object.assign(tr,{direction:'departure',from,to});const wz=trwState();Object.assign(wz.answered,{dir:true,from:true,to:true,fmt:true});wz.done=['dir','route','addr','fmt','pax','contact','ticket'];trwGo('when');return}
+ if(e.target.closest('[data-trw-new]')){trwNewRequest(false);trwGo('dir');return}
+});
+function trwUpdateLive(){const bar=$('#trForm .trw-bar-price'),wz=trwState(),a=wz.answered;if(bar&&a.fmt&&a.from&&a.to&&wz.step!=='ticket'){const pr=trwPriceParts();bar.innerHTML=`<b class="num">${esc(pr.line)}</b><small>${pr.price!==null?'Итого за всех':'Тариф уточнит диспетчер'}</small>`}const aside=$('#trRates.trw-aside');if(aside&&tr.step!=='done')aside.innerHTML=trwAsideHTML()}
+document.addEventListener('input',e=>{const t=e.target;if(!t.closest?.('#trForm.trw'))return;if(t.id==='tr-phone'&&!String(e.inputType||'').startsWith('delete')&&t.selectionStart===t.value.length){const v=trwFormatPhone(t.value);if(v!==t.value)t.value=v}trwCapture();const box=$('#tr-error');if(box)box.textContent='';if(t.id==='tr-time'){trwState().answered.time=true}trwUpdateLive()});
+// The old form redrew itself on «change» of most fields; here only the time picker redraws (to re-check 12 hours).
+window.addEventListener('change',e=>{const t=e.target;if(!t.closest?.('#trForm.trw'))return;if(t.id&&t.id.startsWith('trw-'))e.stopPropagation();if(t.id==='tr-time'){tr.time=t.value;trwState().answered.time=!!t.value}},true);
+const trwPickDateBefore=pickDate;pickDate=function(v){if(cal.target==='trdate'&&current==='transfer'&&$('#trForm.trw')){trwCapture();if(v)trwState().answered.date=true;trwFocus='[data-trw-other-date]'}return trwPickDateBefore(v)};
+v4TransferBar=function(){const mb=$('#mbar');if(mb&&current==='transfer'){mb.hidden=true;document.body.classList.remove('has-mbar')}};
+const trwValidateBefore=validateRequestFields;validateRequestFields=function(kind){
+ if(kind!=='transfers'||!$('#trForm.trw'))return trwValidateBefore(kind);
+ trwCapture();const wz=trwState();if(wz.step!=='ticket'){trwNext();return false}
+ const bad=trwFirstInvalid();if(bad){trwGo(bad);requestAnimationFrame(()=>trwShowError(trwError(bad)));return false}
+ const ok=!!$('#tr-ok')?.checked;if(!setRequestFieldError('tr-ok','te-ok',ok?'':'Примите условия бронирования и согласие на обработку данных.')){$('#tr-ok')?.focus();return false}
+ tr.name=String(tr.passengerNames[0]||'').trim();if(!tr.hasKids)tr.children=0;
+ if(tr.direction==='departure'&&!departureDeadlineOK(tr.date,tr.time)){trwGo('when');requestAnimationFrame(()=>trwShowError(trwError('when')));return false}
+ return true};
+const trwSaveDraftBefore=saveRequestDraft;saveRequestDraft=function(kind){trwSaveDraftBefore(kind);if(kind!=='transfers'||tr.step==='done')return;try{const key=uxDraftKey('transfers'),entry=JSON.parse(localStorage.getItem(key)||'null');if(!entry)return;Object.assign(entry.data,{children:tr.children,hasKids:tr.hasKids,comment:tr.comment,wz:tr.wz});localStorage.setItem(key,JSON.stringify(entry))}catch{}};
 
 hostedBoot();
 })();
