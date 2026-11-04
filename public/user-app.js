@@ -3058,10 +3058,59 @@ function trwRowValue(key){
  if(key==='contact')return [tr.phone.trim(),tr.via,tr.seat?'детское кресло':''].filter(Boolean).join(' · ');
  return ''}
 function trwTile({key,value,icon,title,text='',price='',selected=false,disabled=false,label=''}){return `<button type="button" class="trw-tile${selected?' is-selected':''}" data-trw-pick="${key}" data-value="${esc(value)}" role="radio" aria-checked="${selected}" ${disabled?'disabled aria-disabled="true"':''} ${label?`aria-label="${esc(label)}"`:''}><span class="trw-tile-ico">${icon}</span><span class="trw-tile-copy"><b>${esc(title)}</b>${text?`<small>${esc(text)}</small>`:''}${price?`<em class="num">${esc(price)}</em>`:''}</span><span class="trw-tile-check" aria-hidden="true">${TRW_ICON.check}</span></button>`}
-// 27.3 — places as one grouped list (like iOS Settings): any number of cities lines up; a search field appears for long lists.
-const TRW_FILTER_FROM=8;
-function trwListRow({key,value,icon,title,price='',selected=false}){return `<button type="button" class="trw-row${selected?' is-selected':''}" data-trw-pick="${key}" data-value="${esc(value)}" data-trw-name="${esc(String(title).toLowerCase())}" role="radio" aria-checked="${selected}"><span class="trw-row-ico">${icon}</span><b>${esc(title)}</b>${price?`<em class="num">${esc(price)}</em>`:''}<span class="trw-row-check" aria-hidden="true">${TRW_ICON.check}</span></button>`}
-document.addEventListener('input',e=>{const f=e.target.closest?.('[data-trw-filter]');if(!f)return;e.stopImmediatePropagation();const q=f.value.trim().toLowerCase().replace(/ё/g,'е'),group=f.closest('.trw-group');let shown=0;group.querySelectorAll('.trw-row').forEach(r=>{const hit=!q||r.dataset.trwName.replace(/ё/g,'е').includes(q);r.hidden=!hit;r.classList.toggle('is-first-shown',hit&&!shown);if(hit)shown++});const empty=group.querySelector('.trw-filter-empty');if(empty)empty.hidden=shown>0},true);
+// 27.3 — «Куда едем?»: two rows (where to meet, which city). A row opens a sheet from the bottom with the list, prices and,
+// for long lists, a search field. The sheet follows the finger when dragged down and closes on a flick.
+const TRW_FILTER_FROM=8,TRW_CHEVRON='<svg class="trw-ico" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+let trwSheetState=null;
+function trwCityPrice(c){if(!trwState().answered.from)return '';const ind=trwRate(c,'individual'),grp=trwRate(c,'group');return ind!==null?`от ${rub(grp!==null&&transferGroupAvailable(tr.date)?Math.min(ind,grp):ind)}`:grp!==null?`${rub(grp)} / чел.`:'по запросу'}
+function trwFieldButton({kind,label,value,icon,empty,price='',next=false}){return `<button type="button" class="trw-pick-field${value?' is-set':''}${next?' is-next':''}" data-trw-sheet="${kind}" aria-haspopup="dialog" aria-label="${esc(label)}: ${esc(value||empty)}"><span class="trw-pick-ico">${icon}</span><span class="trw-pick-copy"><small>${esc(label)}</small><b>${esc(value||empty)}</b></span>${price?`<em class="num">${esc(price)}</em>`:''}<span class="trw-pick-chev">${TRW_CHEVRON}</span></button>`}
+function trwOption({key,value,icon,title,price='',selected=false}){return `<button type="button" class="trw-opt" role="radio" aria-checked="${selected}" data-trw-sheet-pick="${key}" data-value="${esc(value)}" data-trw-name="${esc(String(title).toLowerCase())}"><span class="trw-opt-ico">${icon}</span><b>${esc(title)}</b>${price?`<em class="num">${esc(price)}</em>`:''}<span class="trw-opt-check" aria-hidden="true">${TRW_ICON.check}</span></button>`}
+function trwSheetHTML(kind){
+ const T=C.transfer,a=trwState().answered,dep=tr.direction==='departure',city=kind==='to';
+ const title=city?(dep?'Откуда забрать':'Куда отвезти'):(dep?'Куда едем':'Где встретить');
+ const rows=city?T.to.map(c=>trwOption({key:'to',value:c.id,icon:TRW_ICON.city,title:c.name,price:trwCityPrice(c),selected:a.to&&tr.to===c.id})).join(''):T.from.map(t=>trwOption({key:'from',value:t.id,icon:trwTerminalIcon(t),title:t.name,selected:a.from&&tr.from===t.id})).join('');
+ const many=(city?T.to:T.from).length>TRW_FILTER_FROM;
+ return `<div class="trw-sheet-scrim" data-trw-sheet-close></div><div class="trw-sheet" role="dialog" aria-modal="true" aria-labelledby="trwSheetTitle"><div class="trw-sheet-head" data-trw-sheet-drag><span class="trw-sheet-grab" aria-hidden="true"></span><h3 id="trwSheetTitle">${esc(title)}</h3><button type="button" class="trw-sheet-x" data-trw-sheet-close aria-label="Закрыть">${'<svg class="trw-ico" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>'}</button></div>${many?`<input type="search" class="trw-sheet-search" data-trw-filter aria-label="${city?'Найти город':'Найти'}" placeholder="${city?'Найти город':'Найти'}" autocomplete="off" enterkeyhint="search">`:''}<div class="trw-sheet-list" role="radiogroup" aria-labelledby="trwSheetTitle">${rows}</div>${many?`<p class="trw-filter-empty" hidden>${city?'Такого города нет в списке. Напишите его в комментарии на шаге «Контакты» — диспетчер уточнит.':'Ничего не найдено.'}</p>`:''}</div>`}
+function trwOpenSheet(kind){
+ if(trwSheetState)return;trwCapture();
+ const root=document.createElement('div');root.className='trw-sheet-root';root.innerHTML=trwSheetHTML(kind);document.body.append(root);
+ document.documentElement.classList.add('trw-sheet-lock');trwSheetState={kind,root};
+ void root.offsetWidth;root.classList.add('is-open');
+ const first=root.querySelector('.trw-sheet-search')||root.querySelector('.trw-opt[aria-checked="true"]')||root.querySelector('.trw-opt');
+ requestAnimationFrame(()=>first?.focus({preventScroll:true}));
+}
+function trwCloseSheet({focus=true}={}){
+ const st=trwSheetState;if(!st)return;trwSheetState=null;const {root,kind}=st,sheet=root.querySelector('.trw-sheet');
+ sheet.style.transition='';sheet.style.transform='';root.classList.remove('is-open');root.classList.add('is-closing');document.documentElement.classList.remove('trw-sheet-lock');
+ const done=()=>root.remove();sheet.addEventListener('transitionend',done,{once:true});setTimeout(done,reduce?60:480);
+ if(focus)$(`#trPanel [data-trw-sheet="${kind}"]`)?.focus({preventScroll:true});
+}
+document.addEventListener('click',e=>{
+ const open=e.target.closest?.('#trPanel [data-trw-sheet]');if(open){e.preventDefault();trwOpenSheet(open.dataset.trwSheet);return}
+ if(!trwSheetState||!e.target.closest?.('.trw-sheet-root'))return;
+ if(e.target.closest('[data-trw-sheet-close]')){trwCloseSheet();return}
+ const opt=e.target.closest('[data-trw-sheet-pick]');if(!opt)return;
+ const key=opt.dataset.trwSheetPick,value=opt.dataset.value;
+ trwSheetState.root.querySelectorAll('.trw-opt').forEach(o=>o.setAttribute('aria-checked',String(o===opt)));
+ // Let the check mark land before the sheet goes, then fill the row underneath.
+ setTimeout(()=>{trwCloseSheet({focus:false});trwPick(key,value);trwFocus='';$(`#trPanel [data-trw-sheet="${key}"]`)?.focus({preventScroll:true})},reduce?0:140);
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&trwSheetState){e.preventDefault();trwCloseSheet()}});
+// Drag the sheet down by its head: 1:1 with the finger, rubber band upwards, close on a flick or past a third.
+document.addEventListener('pointerdown',e=>{
+ const head=e.target.closest?.('[data-trw-sheet-drag]');if(!head||!trwSheetState||e.target.closest('button')||e.button>0)return;
+ const sheet=head.closest('.trw-sheet'),h=sheet.offsetHeight,y0=e.clientY,hist=[[y0,e.timeStamp]];let dy=0;
+ head.setPointerCapture(e.pointerId);sheet.style.transition='none';
+ const move=ev=>{const d=ev.clientY-y0;dy=d>=0?d:-(-d*h*.55)/(h+.55*-d);sheet.style.transform=`translateY(${dy}px)`;hist.push([ev.clientY,ev.timeStamp]);if(hist.length>5)hist.shift()};
+ const up=ev=>{head.removeEventListener('pointermove',move);head.removeEventListener('pointerup',up);head.removeEventListener('pointercancel',up);
+  const [ya,ta]=hist[0],[yb,tb]=hist[hist.length-1],v=tb>ta?(yb-ya)/(tb-ta)*1000:0,projected=dy+(v/1000)*.998/(1-.998);
+  sheet.style.transition='';if(projected>h*.4&&v>-50)trwCloseSheet();else sheet.style.transform=''};
+ head.addEventListener('pointermove',move);head.addEventListener('pointerup',up);head.addEventListener('pointercancel',up);
+});
+// Leaving the transfer page closes the sheet without animation.
+addEventListener('hashchange',()=>{if(trwSheetState){const r=trwSheetState.root;trwSheetState=null;r.remove();document.documentElement.classList.remove('trw-sheet-lock')}});
+addEventListener('popstate',()=>{if(trwSheetState){const r=trwSheetState.root;trwSheetState=null;r.remove();document.documentElement.classList.remove('trw-sheet-lock')}});
+document.addEventListener('input',e=>{const f=e.target.closest?.('[data-trw-filter]');if(!f)return;e.stopImmediatePropagation();const q=f.value.trim().toLowerCase().replace(/ё/g,'е'),group=f.closest('.trw-group,.trw-sheet');let shown=0;group.querySelectorAll('.trw-row,.trw-opt').forEach(r=>{const hit=!q||r.dataset.trwName.replace(/ё/g,'е').includes(q);r.hidden=!hit;r.classList.toggle('is-first-shown',hit&&!shown);if(hit)shown++});const empty=group.querySelector('.trw-filter-empty');if(empty)empty.hidden=shown>0},true);
 function trwNotice(text,kind='warn'){return `<p class="trw-notice is-${kind}" role="note">${TRW_ICON.warn}<span>${text}</span></p>`}
 function trwSwitch(id,on,title,text,icon){return `<button type="button" class="trw-switch" role="switch" aria-checked="${on}" data-trw-switch="${id}"><span class="trw-switch-ico">${icon}</span><span class="trw-switch-copy"><b>${esc(title)}</b>${text?`<small>${esc(text)}</small>`:''}</span><span class="trw-switch-knob" aria-hidden="true"></span></button>`}
 function trwStepper(id,value,min,max,label){return `<div class="trw-stepper" role="group" aria-label="${esc(label)}"><button type="button" data-trw-step="${id}" data-delta="-1" aria-label="Меньше" ${value<=min?'disabled':''}>−</button><output class="num" aria-live="polite">${value}</output><button type="button" data-trw-step="${id}" data-delta="1" aria-label="Больше" ${value>=max?'disabled':''}>+</button></div>`}
@@ -3092,11 +3141,9 @@ function trwQuestion(key){
  const dep=tr.direction==='departure',wz=trwState(),a=wz.answered,T=C.transfer,editing=wz.done.includes(key);
  if(key==='dir')return `<h2 tabindex="-1">Встретить или проводить?</h2><div role="radiogroup" class="trw-tiles is-two">${trwTile({key:'dir',value:'arrival',icon:TRW_ICON.meet,title:'Встретить',text:'Из аэропорта или с вокзала в Абхазию',selected:a.dir&&!dep})}${trwTile({key:'dir',value:'departure',icon:TRW_ICON.off,title:'Проводить',text:'Из Абхазии к самолёту или поезду',selected:a.dir&&dep})}</div>`;
  if(key==='route'){
-  const terminals=T.from.map(t=>trwListRow({key:'from',value:t.id,icon:trwTerminalIcon(t),title:t.name,selected:a.from&&tr.from===t.id})).join('');
-  const cities=T.to.map(c=>{const ind=a.from?trwRate(c,'individual'):null,grp=a.from?trwRate(c,'group'):null,price=!a.from?'':ind!==null?`от ${rub(grp!==null&&transferGroupAvailable(tr.date)?Math.min(ind,grp):ind)}`:grp!==null?`${rub(grp)} / чел.`:'по запросу';return trwListRow({key:'to',value:c.id,icon:TRW_ICON.city,title:c.name,price,selected:a.to&&tr.to===c.id})}).join('');
-  const many=T.to.length>TRW_FILTER_FROM,cityLabel=dep?'Откуда забрать':'Куда отвезти';
-  const terminalGroup=`<fieldset class="trw-group"><legend>${dep?'Куда едем':'Где встретить'}</legend><div role="radiogroup" class="trw-list">${terminals}</div></fieldset>`,cityGroup=`<fieldset class="trw-group"><legend>${cityLabel}</legend>${many?`<input type="search" class="input trw-filter" data-trw-filter aria-label="Найти город" placeholder="Найти город" autocomplete="off" enterkeyhint="search">`:''}<div role="radiogroup" class="trw-list">${cities}</div>${many?'<p class="trw-filter-empty" hidden>Такого города нет в списке. Напишите его в комментарии на шаге «Контакты» — диспетчер уточнит.</p>':''}</fieldset>`;
-  return `<h2 tabindex="-1">Куда едем?</h2>${dep?trwNotice('Проводы — заявка минимум за 12 часов до выезда.'):''}${dep?cityGroup+terminalGroup:terminalGroup+cityGroup}${editing?trwGoButton(wz.done.includes('ticket')?'Готово':'Дальше'):''}`}
+  const term=a.from?trFrom():null,city=a.to?trTo():null,cityPrice=city?trwCityPrice(city):'';
+  const termField=trwFieldButton({kind:'from',label:dep?'Куда едем':'Где встретить',value:term?.name||'',icon:term?trwTerminalIcon(term):TRW_ICON.plane,empty:'Аэропорт или вокзал',next:!term}),cityField=trwFieldButton({kind:'to',label:dep?'Откуда забрать':'Куда отвезти',value:city?.name||'',icon:TRW_ICON.city,empty:'Выберите город',price:cityPrice,next:!city&&(!!term||dep)});
+  return `<h2 tabindex="-1">Куда едем?</h2>${dep?trwNotice('Проводы — заявка минимум за 12 часов до выезда.'):''}<div class="trw-fields">${dep?cityField+termField:termField+cityField}</div>${editing?trwGoButton(wz.done.includes('ticket')?'Готово':'Дальше'):''}`}
  if(key==='when'){
   const e=trwEarliestDeparture(),err=a.date&&a.time?trwError('when'):'';
   return `<h2 tabindex="-1">${dep?'Когда выезжаем?':'Когда вас встретить?'}</h2>${dep?trwNotice(`Не раньше чем через 12 часов: <b>${esc(trwDayWord(e.date))} с ${esc(e.time)}</b>`):''}<div class="trw-pair"><div class="trw-field"><span id="trw-date-label">Дата</span><button type="button" class="trw-date${a.date?' is-set':''}" data-pop-open="trdate" data-trw-other-date aria-expanded="false" aria-haspopup="dialog" aria-labelledby="trw-date-label trw-date-value">${TRW_ICON.calendar}<b id="trw-date-value">${a.date&&tr.date?esc(shortDate(tr.date)):'Выбрать'}</b></button></div><label class="trw-field trw-time"><span>${dep?'Выезд из Абхазии':'Прибытие рейса / поезда'}</span><input class="input num" id="tr-time" type="time" value="${a.time?esc(tr.time):''}" required></label></div><small class="trw-caption">Местное время, МСК</small>${err?`<p class="trw-inline-error" role="alert">${esc(err)}</p>`:''}${editing?trwGoButton(wz.done.includes('ticket')?'Готово':'Дальше'):''}`}

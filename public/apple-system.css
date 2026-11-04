@@ -452,63 +452,75 @@ html body #app .catalog-price .price-sheet-head small{text-wrap:balance;color:va
 html body:not(.is-admin) #app .acc-admin-link{color:#fff!important;background:#ff9500!important;border:0!important;box-shadow:none!important}
 @media (hover:hover){html body:not(.is-admin) #app .acc-admin-link:hover{background:#f08a00!important}}
 html body:not(.is-admin) #app .acc-admin-link:active{transform:scale(.97)}
-/* 27.3 — transfer places: one grouped list, rows with a hairline between them and a blue check on the chosen one */
-html body:not(.is-admin) #app .trw-list{display:grid;margin:0;padding:0;overflow:hidden;background:var(--ui-surface);border-radius:14px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
-html body:not(.is-admin) #app .trw-row{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:46px;margin:0;padding:0 14px!important;text-align:left;font:inherit;color:var(--ui-ink)!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background-color .15s ease}
-html body:not(.is-admin) #app .trw-row[hidden]{display:none}
-html body:not(.is-admin) #app .trw-row+.trw-row::before{content:"";position:absolute;top:0;left:46px;right:0;height:1px;background:rgba(0,0,0,.08)}
-html body:not(.is-admin) #app .trw-row:active{background:rgba(0,0,0,.05)!important;transition-duration:0s}
-@media (hover:hover){html body:not(.is-admin) #app .trw-row:hover{background:rgba(0,0,0,.03)!important}}
-html body:not(.is-admin) #app .trw-row-ico{display:grid;place-items:center;flex:none;width:20px;color:var(--ui-ink-2)}
-html body:not(.is-admin) #app .trw-row-ico .trw-ico{width:20px;height:20px}
-html body:not(.is-admin) #app .trw-row b{flex:1;min-width:0;font-size:16px;font-weight:400;line-height:1.25;letter-spacing:-.01em}
-html body:not(.is-admin) #app .trw-row em{flex:none;font-style:normal;font-size:14px;color:var(--ui-ink-2)}
-html body:not(.is-admin) #app .trw-row-check{display:grid;place-items:center;flex:none;width:20px;height:20px;color:var(--ui-blue);opacity:0;transform:scale(.6);transition:opacity .2s ease,transform .25s cubic-bezier(.2,.9,.3,1.2)}
-html body:not(.is-admin) #app .trw-row-check .trw-ico{width:18px;height:18px;stroke-width:2.6}
-html body:not(.is-admin) #app .trw-row[aria-checked=true] .trw-row-check{opacity:1;transform:none}
-html body:not(.is-admin) #app .trw-row[aria-checked=true] .trw-row-ico{color:var(--ui-blue)}
-html body:not(.is-admin) #app .trw-row[aria-checked=true] b{font-weight:600}
-html body:not(.is-admin) #app .trw-row:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--ui-blue)!important}
-html body:not(.is-admin) #app .trw-row.is-first-shown::before{display:none}
-html body:not(.is-admin) #app #trForm.trw input.input.trw-filter{height:40px!important;min-height:40px!important;margin:0 0 6px!important;padding:0 12px!important;font-size:16px!important;border-radius:10px!important;background:var(--ui-fill,rgba(118,118,128,.12))!important;border:0!important;box-shadow:none!important}
-html body:not(.is-admin) #app #trForm.trw input.input.trw-filter:focus{box-shadow:inset 0 0 0 2px var(--ui-blue)!important}
-html body:not(.is-admin) #app .trw-filter-empty{margin:6px 2px 0;font-size:13px;line-height:1.4;color:var(--ui-ink-2)}
-@media (prefers-reduced-motion:reduce){html body:not(.is-admin) #app .trw-row-check{transition-duration:.01s;transform:none}}
-@media (prefers-contrast:more){html body:not(.is-admin) #app .trw-list{box-shadow:inset 0 0 0 1px rgba(0,0,0,.45)}}
-html body:not(.is-admin) #app #trForm.trw input.input.trw-filter{padding-left:34px!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238e8e93' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:11px 50%!important}
-/* 27.3 — compact list: light grey inset group on the white card, no outline, 40 px rows */
-html body:not(.is-admin) #app .trw-list{background:rgba(118,118,128,.08);box-shadow:none;border-radius:12px}
-html body:not(.is-admin) #app .trw-row{min-height:40px;gap:10px;padding:0 12px!important}
-html body:not(.is-admin) #app .trw-row+.trw-row::before{left:40px;right:12px;background:rgba(0,0,0,.07)}
-html body:not(.is-admin) #app .trw-row-ico,html body:not(.is-admin) #app .trw-row-ico .trw-ico{width:18px;height:18px}
-html body:not(.is-admin) #app .trw-row b{font-size:15px}
-html body:not(.is-admin) #app .trw-row em{font-size:13px}
-html body:not(.is-admin) #app .trw-row-check,html body:not(.is-admin) #app .trw-row-check .trw-ico{width:16px;height:16px}
-html body:not(.is-admin) #app .trw-row:active{background:rgba(0,0,0,.06)!important}
-@media (hover:hover){html body:not(.is-admin) #app .trw-row:hover{background:rgba(0,0,0,.04)!important}}
-html body:not(.is-admin) #app #trForm.trw .trw-group legend{margin-bottom:4px;font-size:11px}
-html body:not(.is-admin) #app #trForm.trw input.input.trw-filter{height:36px!important;min-height:36px!important;font-size:15px!important}
-html body:not(.is-admin) #app .trw-row{min-height:36px}
-html body:not(.is-admin) #app .trw-step .trw-group+.trw-group{margin-top:2px}
-/* 27.3 — owner chose pills: each place is a pill sized to its name; they wrap, so new cities simply join the flow */
-html body:not(.is-admin) #app #trForm.trw .trw-list{display:flex;flex-wrap:wrap;gap:8px;background:none;border-radius:0;overflow:visible;box-shadow:none}
-html body:not(.is-admin) #app #trForm.trw .trw-row{width:auto;min-height:36px;padding:0 14px 0 11px!important;gap:6px;border-radius:999px!important;background:var(--ui-surface,#fff)!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.14)!important}
-html body:not(.is-admin) #app #trForm.trw .trw-row+.trw-row::before{display:none}
-html body:not(.is-admin) #app #trForm.trw .trw-row b{flex:none;font-size:15px;font-weight:500}
-html body:not(.is-admin) #app #trForm.trw .trw-row em{font-size:13px;color:var(--ui-ink-2)}
-html body:not(.is-admin) #app #trForm.trw .trw-row em::before{content:"· "}
-html body:not(.is-admin) #app #trForm.trw .trw-row-ico,html body:not(.is-admin) #app #trForm.trw .trw-row-ico .trw-ico{width:17px;height:17px}
-html body:not(.is-admin) #app #trForm.trw .trw-row-check{display:none}
-html body:not(.is-admin) #app #trForm.trw .trw-row:active{background:rgba(0,0,0,.05)!important;transform:scale(.97)}
-@media (hover:hover){html body:not(.is-admin) #app #trForm.trw .trw-row:not([aria-checked=true]):hover{background:rgba(0,0,0,.03)!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.26)!important}}
-html body:not(.is-admin) #app #trForm.trw .trw-row[aria-checked=true]{background:var(--ui-blue)!important;color:#fff!important;box-shadow:0 2px 8px rgba(0,113,227,.28)!important}
-html body:not(.is-admin) #app #trForm.trw .trw-row[aria-checked=true] :is(.trw-row-ico,em){color:#fff}
-html body:not(.is-admin) #app #trForm.trw .trw-row:focus-visible{box-shadow:var(--ui-ring)!important}
-html body:not(.is-admin) #app #trForm.trw .trw-group legend{margin:0 0 10px;font-size:16px;font-weight:600;letter-spacing:-.01em;text-transform:none;color:var(--ui-ink)}
-html body:not(.is-admin) #app #trForm.trw .trw-group+.trw-group{margin-top:12px}
-@media (prefers-reduced-motion:reduce){html body:not(.is-admin) #app #trForm.trw .trw-row:active{transform:none}}
-@media (prefers-contrast:more){html body:not(.is-admin) #app #trForm.trw .trw-row{box-shadow:inset 0 0 0 1px rgba(0,0,0,.5)!important}}
-html body:not(.is-admin) #app #trForm.trw .trw-row{min-height:34px;padding:0 12px 0 10px!important;gap:5px}
-html body:not(.is-admin) #app #trForm.trw .trw-row b{font-size:14px}
-html body:not(.is-admin) #app #trForm.trw .trw-row em{font-size:12px}
-html body:not(.is-admin) #app #trForm.trw .trw-row-ico,html body:not(.is-admin) #app #trForm.trw .trw-row-ico .trw-ico{width:16px;height:16px}
+/* 27.3 — «Куда едем?»: two tappable rows; each opens a bottom sheet with the list (centred dialog on a computer) */
+html body:not(.is-admin) #app .trw-fields{display:grid;gap:8px}
+html body:not(.is-admin) #app .trw-pick-field{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;margin:0;padding:10px 12px 10px 14px!important;text-align:left;font:inherit;color:var(--ui-ink)!important;background:rgba(118,118,128,.08)!important;border:0!important;border-radius:14px!important;box-shadow:none!important;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background-color .15s ease,transform .12s ease-out}
+html body:not(.is-admin) #app .trw-pick-field:active{transform:scale(.98);background:rgba(118,118,128,.16)!important;transition-duration:60ms}
+@media (hover:hover){html body:not(.is-admin) #app .trw-pick-field:hover{background:rgba(118,118,128,.12)!important}}
+html body:not(.is-admin) #app .trw-pick-field:focus-visible{outline:none;box-shadow:var(--ui-ring)!important}
+html body:not(.is-admin) #app .trw-pick-ico{display:grid;place-items:center;flex:none;width:22px;color:var(--ui-ink)}
+html body:not(.is-admin) #app .trw-pick-ico .trw-ico{width:22px;height:22px}
+html body:not(.is-admin) #app .trw-pick-copy{display:grid;gap:1px;flex:1;min-width:0}
+html body:not(.is-admin) #app .trw-pick-copy small{font-size:12px;line-height:16px;color:var(--ui-ink-2)}
+html body:not(.is-admin) #app .trw-pick-copy b{overflow:hidden;font-size:16px;font-weight:600;line-height:21px;letter-spacing:-.01em;white-space:nowrap;text-overflow:ellipsis}
+html body:not(.is-admin) #app .trw-pick-field:not(.is-set) .trw-pick-copy b{font-weight:500;color:var(--ui-ink-2)}
+html body:not(.is-admin) #app .trw-pick-field.is-next:not(.is-set) .trw-pick-copy b{color:var(--ui-blue)}
+html body:not(.is-admin) #app .trw-pick-field em{flex:none;font-style:normal;font-size:13px;color:var(--ui-ink-2)}
+html body:not(.is-admin) #app .trw-pick-chev{display:grid;place-items:center;flex:none;color:rgba(60,60,67,.3)}
+html body:not(.is-admin) #app .trw-pick-chev .trw-ico{width:18px;height:18px}
+
+html.trw-sheet-lock,html.trw-sheet-lock body{overflow:hidden!important}
+.trw-sheet-root{position:fixed;inset:0;z-index:1200;display:flex;align-items:flex-end;justify-content:center;pointer-events:none}
+.trw-sheet-scrim{position:absolute;inset:0;background:rgba(0,0,0,.32);opacity:0;transition:opacity .3s ease;pointer-events:auto}
+.trw-sheet{position:relative;display:flex;flex-direction:column;width:100%;max-height:min(78vh,620px);padding:0 16px calc(12px + env(safe-area-inset-bottom,0px));background:#fff;border-radius:20px 20px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,.18);color:#1d1d1f;font-family:inherit;transform:translateY(100%);transition:transform .42s cubic-bezier(.32,.72,0,1);pointer-events:auto;will-change:transform}
+.trw-sheet-root.is-open .trw-sheet-scrim{opacity:1}
+.trw-sheet-root.is-open .trw-sheet{transform:none}
+.trw-sheet-root.is-closing .trw-sheet{transition-duration:.3s;transition-timing-function:cubic-bezier(.4,0,1,1)}
+.trw-sheet-root.is-closing .trw-sheet-scrim{transition-duration:.25s}
+.trw-sheet-head{position:relative;flex:none;display:flex;align-items:center;justify-content:center;min-height:52px;padding-top:8px;touch-action:none;cursor:grab}
+.trw-sheet-grab{position:absolute;top:6px;left:50%;width:36px;height:5px;margin-left:-18px;border-radius:3px;background:rgba(60,60,67,.18)}
+.trw-sheet-head h3{margin:0;font-size:17px;font-weight:600;letter-spacing:-.02em;line-height:22px}
+.trw-sheet-x{position:absolute;right:-4px;top:12px;display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:rgba(118,118,128,.12);color:#6e6e73;cursor:pointer}
+.trw-sheet-x .trw-ico{width:14px;height:14px}
+.trw-sheet-x:active{transform:scale(.92)}
+.trw-sheet-search{flex:none;width:100%;height:36px;margin:0 0 6px;padding:0 12px 0 34px;border:0;border-radius:10px;font:inherit;font-size:16px;color:#1d1d1f;background:rgba(118,118,128,.12) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238e8e93' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 11px 50%;outline:0;-webkit-appearance:none;appearance:none}
+.trw-sheet-search:focus{box-shadow:inset 0 0 0 2px #0071e3}
+.trw-sheet-list{display:grid;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;margin:0 -16px;padding:0 16px}
+.trw-opt{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:48px;margin:0;padding:0 2px;text-align:left;font:inherit;color:#1d1d1f;background:transparent;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.trw-opt[hidden]{display:none}
+.trw-opt+.trw-opt::before{content:"";position:absolute;top:0;left:36px;right:0;height:1px;background:rgba(60,60,67,.12)}
+.trw-opt.is-first-shown::before{display:none}
+.trw-opt:active{background:rgba(0,0,0,.04)}
+.trw-opt:focus-visible{outline:none;box-shadow:inset 0 0 0 2px #0071e3;border-radius:10px}
+.trw-opt-ico{display:grid;place-items:center;flex:none;width:22px;color:#1d1d1f}
+.trw-opt-ico .trw-ico{width:22px;height:22px}
+.trw-opt b{flex:1;min-width:0;font-size:17px;font-weight:400;line-height:22px;letter-spacing:-.02em}
+.trw-opt em{flex:none;font-style:normal;font-size:15px;color:#6e6e73}
+.trw-opt-check{display:grid;place-items:center;flex:none;width:20px;color:#0071e3;opacity:0;transform:scale(.6);transition:opacity .18s ease,transform .25s cubic-bezier(.2,.9,.3,1.25)}
+.trw-opt-check .trw-ico{width:18px;height:18px;stroke-width:2.6}
+.trw-opt[aria-checked=true] .trw-opt-check{opacity:1;transform:none}
+.trw-opt[aria-checked=true] b{font-weight:600}
+.trw-sheet .trw-filter-empty{margin:10px 2px 4px;font-size:13px;line-height:1.4;color:#6e6e73}
+@media (min-width:641px){
+ .trw-sheet-root{align-items:center;padding:24px}
+ .trw-sheet{max-width:440px;max-height:min(70vh,620px);padding-bottom:12px;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.25);transform:translateY(12px) scale(.97);opacity:0;transition:transform .32s cubic-bezier(.32,.72,0,1),opacity .2s ease}
+ .trw-sheet-root.is-open .trw-sheet{opacity:1}
+ .trw-sheet-grab{display:none}
+ .trw-sheet-head{cursor:default}
+ @media (hover:hover){.trw-opt:hover{background:rgba(0,0,0,.035);border-radius:10px}.trw-sheet-x:hover{background:rgba(118,118,128,.2)}}
+}
+@media (prefers-reduced-motion:reduce){
+ .trw-sheet,.trw-sheet-root.is-closing .trw-sheet{transform:none!important;opacity:0;transition:opacity .2s ease!important}
+ .trw-sheet-root.is-open .trw-sheet{opacity:1}
+ .trw-opt-check{transition-duration:.01s;transform:none}
+ html body:not(.is-admin) #app .trw-pick-field:active{transform:none}
+}
+@media (prefers-contrast:more){.trw-sheet{box-shadow:0 0 0 1px rgba(0,0,0,.5)}html body:not(.is-admin) #app .trw-pick-field{box-shadow:inset 0 0 0 1px rgba(0,0,0,.45)!important}}
+/* the site's general button and input styles must not leak into the sheet */
+html body .trw-sheet .trw-opt{justify-content:flex-start!important;width:100%!important;height:auto!important;min-height:48px!important;margin:0!important;padding:0 2px!important;text-align:left!important;color:#1d1d1f!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;font-size:inherit!important;font-weight:400!important;transform:none!important}
+html body .trw-sheet .trw-opt:active{background:rgba(0,0,0,.04)!important}
+html body .trw-sheet .trw-opt:focus-visible{box-shadow:inset 0 0 0 2px #0071e3!important;border-radius:10px!important}
+@media (hover:hover) and (min-width:641px){html body .trw-sheet .trw-opt:hover{background:rgba(0,0,0,.035)!important;border-radius:10px!important}}
+html body .trw-sheet .trw-sheet-x{width:30px!important;height:30px!important;min-height:0!important;padding:0!important;border:0!important;border-radius:50%!important;background:rgba(118,118,128,.12)!important;box-shadow:none!important;color:#6e6e73!important}
+html body .trw-sheet .trw-sheet-search{height:36px!important;min-height:0!important;margin:0 0 6px!important;padding:0 12px 0 34px!important;border:0!important;border-radius:10px!important;box-shadow:none!important;font-size:16px!important;background-color:rgba(118,118,128,.12)!important}
+html body .trw-sheet .trw-sheet-search:focus{box-shadow:inset 0 0 0 2px #0071e3!important}
