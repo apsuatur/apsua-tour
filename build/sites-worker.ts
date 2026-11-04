@@ -29,6 +29,8 @@ export default {
     if(path.startsWith('/api/'))return siteAPI(request,env as any,ctx);
     if(['GET','HEAD'].includes(request.method)&&(path==='/robots.txt'||path==='/sitemap.xml'))return seoFile(request,env as any);
     // The excursion list moved from /catalog to /excursions; old links and search results follow permanently.
+    // The diary lives at /journal; /diary links typed by hand or shared from the app follow it.
+    if(['GET','HEAD'].includes(request.method)&&/^\/diary(\/|$)/.test(path)){const url=new URL(request.url);return new Response(null,{status:301,headers:{Location:'/journal'+path.slice('/diary'.length).replace(/\/$/,'')+url.search,'Cache-Control':'public, max-age=3600'}})}
     if(['GET','HEAD'].includes(request.method)&&/^\/catalog(\/|$)/.test(path)){const url=new URL(request.url),rest=path.slice('/catalog'.length).replace(/\/$/,'');url.pathname=rest?'/tour'+rest:'/excursions';return new Response(null,{status:301,headers:{Location:url.pathname+url.search,'Cache-Control':'public, max-age=3600'}})}
     if(['GET','HEAD'].includes(request.method)&&(path==='/'||path==='/index.html'||/^\/(excursions|administrator|journal|account|transfer|map|faq|tour|reviews|useful|fleet|about|contacts|orders|favorites|compare|pick|install|excursions-from)(\/|$)/.test(path)))return new Response(request.method==='HEAD'?null:await pageShellFor(pageShell,request,env as any),{headers:pageHeaders});
     let binding = ctx.props?.CONNECTORS;
