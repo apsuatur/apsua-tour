@@ -444,3 +444,11 @@ html body #app .catalog-price .price-sheet-head small{text-wrap:balance;color:va
  html body #app .catalog-price .price-actions{padding-top:0}
  html body #app .catalog-price .price-actions .btn{height:40px!important;min-height:40px!important;border-radius:12px!important;font-size:15px!important}
 }
+/* 27.2 — profile on phones: cards use the same 16 px side margins as other pages; staff link sits after «Выйти» in orange */
+@media (max-width:700px){
+ html body:not(.is-admin) #app .account-dashboard-wrap{width:100%!important;max-width:none!important;padding-inline:16px!important;box-sizing:border-box}
+ html body:not(.is-admin) #app .account-dashboard{margin:8px 0 35px!important}
+}
+html body:not(.is-admin) #app .acc-admin-link{color:#fff!important;background:#ff9500!important;border:0!important;box-shadow:none!important}
+@media (hover:hover){html body:not(.is-admin) #app .acc-admin-link:hover{background:#f08a00!important}}
+html body:not(.is-admin) #app .acc-admin-link:active{transform:scale(.97)}
