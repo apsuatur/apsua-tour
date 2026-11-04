@@ -13,3 +13,7 @@ Admin content edits are drafts until the user explicitly presses «Сохран�
 # Future server integration
 
 The server must be authoritative for excursion prices, available dates, remaining seats, transfer dates, and submission/processing of all excursion and transfer requests. Fetch these values from server APIs and send applications to the server; do not use client-generated availability or hardcoded prices as confirmed inventory. Preserve honest loading/error states and await server acknowledgement before confirming submission. This is a future integration requirement; do not claim live seat inventory exists until implemented.
+
+# Versioned static files
+
+The service worker (public/sw.js) serves every same-origin file whose address has `?v=` (and everything under /fonts/) from its cache without asking the network. Whenever you change such a file (for example public/user-app.js, any CSS file, rail-motion.js, live-updates.js, visual-editor.js), raise its `?v=` number everywhere it is referenced (lib/site-shell.ts, the precache list in public/sw.js, tests/deployment-shell.mjs, and loaders like visual-editor.css inside visual-editor.js). Otherwise returning visitors keep the old file. Fonts under /fonts/ must get a new file name if they ever change.
