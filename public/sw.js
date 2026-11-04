@@ -1,9 +1,9 @@
-// build 169: precache exactly what the current page shell loads; other fonts and images are cached on first use.
+// build 170: precache exactly what the current page shell loads; other fonts and images are cached on first use.
 // Files with a version in the address (?v=...) and fonts never change under the same address,
 // so they are served from the phone's cache without a network round trip. A new version gets a new address.
 // Everything else (pages, unversioned images) still goes to the network first and uses the cache only offline.
-const CACHE='apsua-hosted-v169';
-self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./fleet.css?v=131','./fonts.css?v=131','./user-theme.css?v=148','./responsive-layout.css?v=131','./apple-theme.css?v=146','./v134.css?v=146','./v146.css?v=146','./v152.css?v=166','./intro.js?v=logo131','./user-app.js?v=169','./rail-motion.js?v=166','./live-updates.js?v=166','./visual-editor.js?v=166','./fonts/manrope-variable.woff2','./api/app-icon-180.png','./apple-touch-icon.png','./assets/app-icon-192-v141.png','./assets/app-icon-512-v141.png'])));self.skipWaiting()});
+const CACHE='apsua-hosted-v170';
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./fleet.css?v=131','./fonts.css?v=131','./user-theme.css?v=148','./responsive-layout.css?v=131','./apple-theme.css?v=146','./v134.css?v=146','./v146.css?v=146','./v152.css?v=166','./intro.js?v=logo131','./user-app.js?v=170','./rail-motion.js?v=166','./live-updates.js?v=166','./visual-editor.js?v=166','./fonts/manrope-variable.woff2','./api/app-icon-180.png','./apple-touch-icon.png','./assets/app-icon-192-v141.png','./assets/app-icon-512-v141.png'])));self.skipWaiting()});
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 const keep=(request,response)=>{if(response.ok&&response.type==='basic'&&!response.headers.get('content-type')?.includes('text/html')){const copy=response.clone();caches.open(CACHE).then(c=>c.put(request,copy))}return response};
 const offline=()=>new Response('Для загрузки этой страницы нужен интернет.',{status:503,headers:{'Content-Type':'text/plain;charset=utf-8'}});
