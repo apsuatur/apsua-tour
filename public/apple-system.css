@@ -229,3 +229,15 @@ html body:not(.is-admin) #app .v4-yandex.is-compact .yandex-plaque .btn{flex:non
  html body:not(.is-admin) #app .v4-steps-sec .v4-steps>li span{font-size:13px;line-height:1.35;color:var(--muted)}
  html body .v4-hero{min-height:min(400px,60svh)!important}
 }
+
+/* 26.8 — small fixes: bigger tap areas for section links, empty favourites, fleet seats, reviews page, contacts. */
+html body:not(.is-admin) #app .v4-head>a{display:inline-flex;align-items:center;min-height:44px;padding:0 10px;margin:-10px -10px}
+html body:not(.is-admin) #app .wrap.fav-empty :is(.comfort-actions,.section-head,.toolbar):is(div,section,header,nav){display:none!important}
+html body:not(.is-admin) #app .fav-empty .cards>.empty{display:grid;justify-items:center;gap:12px;text-align:center}
+html body:not(.is-admin) #app .fleet-pax-range.is-replaced{display:none!important}
+html body:not(.is-admin) #app .fleet-seats{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+html body:not(.is-admin) #app .site-reviews{display:grid;gap:14px;margin-bottom:28px}
+html body:not(.is-admin) #app .site-reviews-list{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr))}
+html body:not(.is-admin) #app .company-contact-sub{margin:16px 0 8px;font-size:15px;font-weight:600}
+html body:not(.is-admin) #app .company-contact .company-partner-contacts{display:grid;gap:8px;margin-bottom:16px}
+@media (max-width:760px){html body:not(.is-admin) #app #mapSide{scroll-margin-top:72px}}

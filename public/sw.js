@@ -3,8 +3,8 @@
 // Files with a version in the address (?v=...) and fonts never change under the same address,
 // so they are served from the phone's cache without a network round trip. A new version gets a new address.
 // Everything else (pages, unversioned images) still goes to the network first and uses the cache only offline.
-const CACHE='apsua-hosted-v186';
-self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./fleet.css?v=131','./fonts.css?v=131','./user-theme.css?v=148','./responsive-layout.css?v=131','./apple-theme.css?v=146','./v134.css?v=146','./v146.css?v=146','./v152.css?v=176','./apple-system.css?v=8','./intro.js?v=logo131','./search-pages.js?v=176','./user-app.js?v=184','./rail-motion.js?v=166','./live-updates.js?v=166','./visual-editor.js?v=173','./fonts/manrope-variable.woff2','./api/app-icon-180.png','./apple-touch-icon.png','./assets/app-icon-192-v141.png','./assets/app-icon-512-v141.png'])));self.skipWaiting()});
+const CACHE='apsua-hosted-v187';
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./fleet.css?v=131','./fonts.css?v=131','./user-theme.css?v=148','./responsive-layout.css?v=131','./apple-theme.css?v=146','./v134.css?v=146','./v146.css?v=146','./v152.css?v=176','./apple-system.css?v=9','./intro.js?v=logo131','./search-pages.js?v=176','./user-app.js?v=185','./rail-motion.js?v=166','./live-updates.js?v=166','./visual-editor.js?v=173','./fonts/manrope-variable.woff2','./api/app-icon-180.png','./apple-touch-icon.png','./assets/app-icon-192-v141.png','./assets/app-icon-512-v141.png'])));self.skipWaiting()});
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 const keep=(request,response)=>{if(response.ok&&response.type==='basic'&&!response.headers.get('content-type')?.includes('text/html')){const copy=response.clone();caches.open(CACHE).then(c=>c.put(request,copy))}return response};
 const offline=()=>new Response('Для загрузки этой страницы нужен интернет.',{status:503,headers:{'Content-Type':'text/plain;charset=utf-8'}});
