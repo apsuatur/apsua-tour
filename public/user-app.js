@@ -952,6 +952,7 @@ function route(){
   current='transfer';tr.step='form';transferView();
   if(landing){const h=$('h1',app);if(h)h.textContent=landing.title;app.insertAdjacentHTML('beforeend',searchMoreHTML('Подробнее о маршруте',landing.body))}
   else if(search)app.insertAdjacentHTML('beforeend',searchMoreHTML('Подробнее о трансфере',search.transferOverview(C)));
+  trwMountHelp();
   setNav('transfer');top();return
  }
  if(p0==='excursions-from'){
@@ -3083,7 +3084,7 @@ function trwCloseSheet({focus=true}={}){
  const st=trwSheetState;if(!st)return;trwSheetState=null;const {root,kind}=st,sheet=root.querySelector('.trw-sheet');
  sheet.style.transition='';sheet.style.transform='';root.classList.remove('is-open');root.classList.add('is-closing');document.documentElement.classList.remove('trw-sheet-lock');
  const done=()=>root.remove();sheet.addEventListener('transitionend',done,{once:true});setTimeout(done,reduce?60:480);
- if(focus)$(`#trPanel [data-trw-sheet="${kind}"]`)?.focus({preventScroll:true});
+ if(focus)(kind==='help'?$('#app [data-trw-help]'):$(`#trPanel [data-trw-sheet="${kind}"]`))?.focus({preventScroll:true});
 }
 document.addEventListener('click',e=>{
  const open=e.target.closest?.('#trPanel [data-trw-sheet]');if(open){e.preventDefault();trwOpenSheet(open.dataset.trwSheet);return}
@@ -3107,6 +3108,19 @@ document.addEventListener('pointerdown',e=>{
   sheet.style.transition='';if(projected>h*.4&&v>-50)trwCloseSheet();else sheet.style.transform=''};
  head.addEventListener('pointermove',move);head.addEventListener('pointerup',up);head.addEventListener('pointercancel',up);
 });
+// 27.4 — transfer info behind a round «?» that always sits in the same place, just above the bottom menu.
+// The text stays in the page for search engines; the button shows it in the same sheet as the place lists.
+function trwMountHelp(){const src=$('#app [data-search-content]');if(!src||$('#app [data-trw-help]'))return;src.classList.add('is-help-source');const label=src.querySelector('summary')?.textContent||'Подробнее о трансфере';app.insertAdjacentHTML('beforeend',`<button type="button" class="trw-help-fab" data-trw-help aria-haspopup="dialog" aria-label="${esc(label)}" title="${esc(label)}"><span aria-hidden="true">?</span></button>`)}
+function trwOpenHelp(){
+ if(trwSheetState)return;const src=$('#app [data-search-content]');if(!src)return;
+ const title=src.querySelector('summary')?.textContent||'Подробнее о трансфере',body=src.querySelector('.search-more-body')?.innerHTML||'';
+ const root=document.createElement('div');root.className='trw-sheet-root';
+ root.innerHTML=`<div class="trw-sheet-scrim" data-trw-sheet-close></div><div class="trw-sheet is-info" role="dialog" aria-modal="true" aria-labelledby="trwSheetTitle"><div class="trw-sheet-head" data-trw-sheet-drag><span class="trw-sheet-grab" aria-hidden="true"></span><h3 id="trwSheetTitle">${esc(title)}</h3><button type="button" class="trw-sheet-x" data-trw-sheet-close aria-label="Закрыть"><svg class="trw-ico" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div><div class="trw-sheet-body prose" tabindex="-1">${body}</div></div>`;
+ document.body.append(root);document.documentElement.classList.add('trw-sheet-lock');trwSheetState={kind:'help',root};void root.offsetWidth;root.classList.add('is-open');
+ requestAnimationFrame(()=>root.querySelector('.trw-sheet-body')?.focus({preventScroll:true}));
+}
+document.addEventListener('click',e=>{if(trwSheetState&&e.target.closest?.('.trw-sheet a[href]'))trwCloseSheet({focus:false})},true);
+document.addEventListener('click',e=>{if(e.target.closest?.('#app [data-trw-help]')){e.preventDefault();trwOpenHelp()}});
 // Leaving the transfer page closes the sheet without animation.
 addEventListener('hashchange',()=>{if(trwSheetState){const r=trwSheetState.root;trwSheetState=null;r.remove();document.documentElement.classList.remove('trw-sheet-lock')}});
 addEventListener('popstate',()=>{if(trwSheetState){const r=trwSheetState.root;trwSheetState=null;r.remove();document.documentElement.classList.remove('trw-sheet-lock')}});

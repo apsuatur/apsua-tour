@@ -524,3 +524,21 @@ html body .trw-sheet .trw-opt:focus-visible{box-shadow:inset 0 0 0 2px #0071e3!i
 html body .trw-sheet .trw-sheet-x{width:30px!important;height:30px!important;min-height:0!important;padding:0!important;border:0!important;border-radius:50%!important;background:rgba(118,118,128,.12)!important;box-shadow:none!important;color:#6e6e73!important}
 html body .trw-sheet .trw-sheet-search{height:36px!important;min-height:0!important;margin:0 0 6px!important;padding:0 12px 0 34px!important;border:0!important;border-radius:10px!important;box-shadow:none!important;font-size:16px!important;background-color:rgba(118,118,128,.12)!important}
 html body .trw-sheet .trw-sheet-search:focus{box-shadow:inset 0 0 0 2px #0071e3!important}
+/* 27.4 — «?» for transfer info: one fixed place above the bottom menu (bottom right corner on a computer) */
+html body #app .search-more-wrap.is-help-source{display:none!important}
+html body #app .trw-help-fab{position:fixed;z-index:45;right:16px;bottom:calc(76px + env(safe-area-inset-bottom,0px));display:grid;place-items:center;width:44px!important;height:44px!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:50%!important;color:var(--apple-blue,#0071e3)!important;background:rgba(255,255,255,.78)!important;-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);box-shadow:0 0 0 .5px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.14)!important;font:700 20px/1 var(--f-display,system-ui,sans-serif)!important;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s ease-out,box-shadow .2s ease}
+html body #app .trw-help-fab:active{transform:scale(.92);transition-duration:60ms}
+@media (hover:hover){html body #app .trw-help-fab:hover{box-shadow:0 0 0 .5px rgba(0,0,0,.1),0 6px 20px rgba(0,0,0,.18)!important}}
+html body #app .trw-help-fab:focus-visible{outline:3px solid rgba(0,113,227,.45);outline-offset:2px}
+@media (min-width:901px){html body #app .trw-help-fab{right:24px;bottom:24px}}
+@media (prefers-reduced-transparency:reduce){html body #app .trw-help-fab{background:#fff!important;-webkit-backdrop-filter:none;backdrop-filter:none}}
+@media (prefers-reduced-motion:reduce){html body #app .trw-help-fab:active{transform:none}}
+/* the info sheet: taller, its text scrolls */
+.trw-sheet.is-info{max-height:min(85vh,720px)}
+.trw-sheet-body{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;margin:0 -16px;padding:0 16px 8px;font-size:15px;line-height:1.5;color:#3a3a3c;outline:0}
+.trw-sheet-body h2,.trw-sheet-body h3{margin:16px 0 6px;font-size:17px;line-height:1.3;letter-spacing:-.01em;color:#1d1d1f}
+.trw-sheet-body>:first-child{margin-top:0}
+.trw-sheet-body p{margin:0 0 10px}
+.trw-sheet-body ul{margin:0 0 10px;padding-left:18px}
+.trw-sheet-body a{color:#0071e3}
+@media (min-width:641px){.trw-sheet.is-info{max-width:560px}}
