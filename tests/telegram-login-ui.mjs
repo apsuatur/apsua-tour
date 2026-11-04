@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 const full=readFileSync('public/user-app.js','utf8');
-const source=full.slice(full.indexOf('let telegramLoginSDK,'),full.indexOf('const accountViewBeforeTelegram'));
+const source=full.slice(full.indexOf('function routeHash('),full.indexOf('window.apsuaRouteHash='))+full.slice(full.indexOf('let telegramLoginSDK,'),full.indexOf('const accountViewBeforeTelegram'));
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 async function setup({answer={id_token:'signed-token'},failure=false,lostCookie=false,sdkError=false,hash='#/excursions/ritsa?city=Сухум',page='tour',savedBack=null,pending=null,desktop=false}={}){
  const makeWeb=()=>({hidden:true,attrs:{},setAttribute(k,v){this.attrs[k]=v}});const slot={childElementCount:0,innerHTML:'',isConnected:true,button:{},status:{},web:makeWeb()};let reloads=0,options,callback,authenticated=false,chrome=0,routes=0,modal,webStatus='pending';
