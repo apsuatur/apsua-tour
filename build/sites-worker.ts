@@ -27,7 +27,7 @@ export default {
     const asset=installationAsset(request);if(asset)return asset;
     if(path.startsWith('/api/'))return siteAPI(request,env as any,ctx);
     if(['GET','HEAD'].includes(request.method)&&(path==='/robots.txt'||path==='/sitemap.xml'))return seoFile(request,env as any);
-    if(['GET','HEAD'].includes(request.method)&&(path==='/'||path==='/index.html'||/^\/(catalog|administrator|journal|account|transfer|map|faq|tour|reviews|useful|fleet|about|contacts|orders|favorites|compare|pick|install)(\/|$)/.test(path)))return new Response(request.method==='HEAD'?null:await pageShellFor(pageShell,request,env as any),{headers:pageHeaders});
+    if(['GET','HEAD'].includes(request.method)&&(path==='/'||path==='/index.html'||/^\/(catalog|administrator|journal|account|transfer|map|faq|tour|reviews|useful|fleet|about|contacts|orders|favorites|compare|pick|install|excursions-from)(\/|$)/.test(path)))return new Response(request.method==='HEAD'?null:await pageShellFor(pageShell,request,env as any),{headers:pageHeaders});
     let binding = ctx.props?.CONNECTORS;
     // Local preview emulates the same request-scoped capability. This branch and
     // the auxiliary service binding are absent from production builds.

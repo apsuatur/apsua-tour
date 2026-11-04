@@ -11,7 +11,8 @@ for(const [path,hash] of [['/','#/'],['/catalog?cat=mount','#/excursions?cat=mou
 for(const [hash,path] of [['#/','/'],['#/excursions?cat=mount','/catalog?cat=mount'],['#/excursions/ritsa','/tour/ritsa'],['#/diary/story','/journal/story'],['#/admin/tours',null]])assert.equal(context.publicURL(hash),path);
 context.location=new URL('https://apsuatur.com/#/excursions/ritsa?city=sukhum');context.canonicalPublicURL();assert.equal(location.pathname,'/tour/ritsa');assert.equal(location.search,'?city=sukhum');assert.equal(location.hash,'');assert.equal(context.routeHash(),'#/excursions/ritsa?city=sukhum');
 const api=readFileSync('lib/site-api.ts','utf8');
-const seo=api.slice(api.indexOf('const escapeHTML='));
+await import('../public/search-pages.js');
+const seo='const SearchPages=globalThis.ApsuaSearchPages;\n'+api.slice(api.indexOf('const escapeHTML='));
 const js=ts.transpileModule(seo,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
 const {pageShellFor,seoFile}=await import('data:text/javascript;base64,'+Buffer.from(js).toString('base64'));
 const shell=JSON.parse(readFileSync('lib/site-shell.ts','utf8').slice('export default '.length).replace(/;\s*$/,''));
