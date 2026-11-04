@@ -1,6 +1,46 @@
 
 (function(){
 "use strict";
+
+/* Public URLs share the server's canonical paths. Private admin keeps its draft guards. */
+function routeHash(url=location){
+ if(url.hash && (/^#\//.test(url.hash)||/^#(?:tour-|home$|catalog$|transfer$|map$|reviews$|diary$|favorites$|account$|popular$|install$|admin$)/.test(url.hash)))return url.hash;
+ const path=url.pathname.replace(/\/$/,'')||'/';
+ const mapped=path.replace(/^\/tour\//,'/excursions/').replace(/^\/catalog(?=\/|$)/,'/excursions').replace(/^\/journal(?=\/|$)/,'/diary').replace(/^\/administrator(?=\/|$)/,'/admin');
+ return '#'+(mapped==='/index.html'?'/':mapped)+(url.search||'');
+}
+window.apsuaRouteHash=routeHash;
+function publicURL(hash){
+ if(!/^#\//.test(hash)||/^#\/(admin)(?:[/?]|$)/.test(hash))return null;
+ let path=hash.slice(1).replace(/^\/excursions\//,'/tour/');
+ path=path.replace(/^\/excursions(?=[?]|$)/,'/catalog').replace(/^\/diary(?=[/?]|$)/,'/journal');
+ return path;
+}
+function canonicalPublicURL(){
+ const path=publicURL(routeHash());
+ if(path&&location.hash.startsWith('#/')){history.replaceState(history.state,'',path);routePreviousURL=location.href}
+ if(/^#\/admin(?:[/?]|$)/.test(routeHash())&&!location.hash)history.replaceState(history.state,'',location.pathname+location.search+routeHash());
+}
+function publicLinks(root=document){
+ for(const a of root.querySelectorAll('a[href^="#/"],a[href^="/#/"]')){
+  const href=a.getAttribute('href').replace(/^\/#/,'#'),url=publicURL(href);
+  if(url)a.setAttribute('href',url);
+ }
+}
+new MutationObserver(records=>{for(const r of records){if(r.type==='attributes'){const a=r.target;if(a.matches?.('a[href^="#/"],a[href^="/#/"]')){const url=publicURL(a.getAttribute('href').replace(/^\/#/,'#'));if(url)a.setAttribute('href',url)}}else for(const n of r.addedNodes)if(n.nodeType===1){if(n.matches?.('a[href]')){const url=publicURL(n.getAttribute('href').replace(/^\/#/,'#'));if(url)n.setAttribute('href',url)}publicLinks(n)}}}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['href']});
+publicLinks();
+document.addEventListener('click',e=>{
+ const a=e.target.closest?.('a[href]');if(!a||e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||a.target||a.hasAttribute('download')||/^#\/admin(?:[/?]|$)/.test(routeHash()))return;
+ const u=new URL(a.href,location.href);if(u.origin!==location.origin||u.hash||!/^\/(?:$|catalog(?:[/?]|$)|tour\/|transfer$|map$|reviews$|journal(?:\/|$)|useful(?:\/|$)|faq$|fleet$|about$|contacts$|orders$|account$|favorites$|compare$|pick$|install$)/.test(u.pathname))return;
+ if(u.pathname==='/account'&&!serverIdentity&&serverTelegramAuth.enabled)return;
+ if(u.pathname==='/faq'&&current==='home'&&$('#faq')){e.preventDefault();v17CloseMenu(true);v17ScrollToFaq(true);history.replaceState(history.state,'','/faq');routePreviousURL=location.href;return}
+ e.preventDefault();const hash=routeHash(u);if(hash===routeHash())return;location.hash=hash;
+},true);
+// Traversing between two clean history entries does not emit a native hashchange.
+let routePreviousURL=location.href;
+window.addEventListener('popstate',()=>{const oldURL=routePreviousURL,newURL=location.href;routePreviousURL=newURL;if(new URL(oldURL).hash===location.hash)window.dispatchEvent(new HashChangeEvent('hashchange',{oldURL,newURL}))});
+window.addEventListener('hashchange',()=>{queueMicrotask(()=>{routePreviousURL=location.href})});
+
 /* ---------- Painted illustrations (placeholders for real photos) ---------- */
 const PALS=[
   {s1:'#7fc3d6',s2:'#f4dfbf',sun:'#fff4d8',far:'#9ab9bd',mid:'#4f8175',near:'#20453c',water:'#2a7d87',deep:'#155a63'},
@@ -242,7 +282,7 @@ function searchHTML(id){const q=ui.q;
   <button class="btn btn-accent" type="submit" aria-label="Найти экскурсии">${ICON.search}<span>Найти</span></button></form>`}
 function refreshSearch(){$$('form.search').forEach(f=>{f.outerHTML=searchHTML(f.id)})}
 const qString=()=>{const p=new URLSearchParams();if(ui.q.district)p.set('district',ui.q.district);if(ui.q.city)p.set('city',ui.q.city);if(ui.q.format)p.set('format',ui.q.format);if(ui.q.date)p.set('date',ui.q.date);if(ui.q.people!==1)p.set('people',ui.q.people);if(ui.cat!=='all')p.set('cat',ui.cat);if(ui.priceMin!=null)p.set('min',ui.priceMin);if(ui.priceMax!=null)p.set('max',ui.priceMax);const s=p.toString();return s?'?'+s:''};
-function syncCatalogHash(){if(current==='catalog'){history.replaceState(null,'','#/excursions'+qString())}}
+function syncCatalogHash(){if(current==='catalog'){history.replaceState(history.state,'','/catalog'+qString());routePreviousURL=location.href}}
 
 let popEl=null,cal={y:0,m:0,target:'q'};
 function closePop(){if(!popEl)return;if(popEl._bd)popEl._bd.remove();const b=popEl._btn;popEl.remove();popEl=null;if(b){b.setAttribute('aria-expanded','false')}}
@@ -851,21 +891,22 @@ document.addEventListener('submit',e=>{
 /* ---------- Router: every section has its own address ---------- */
 const LEGACY={home:'/',catalog:'/excursions',transfer:'/transfer',map:'/map',reviews:'/reviews',diary:'/diary',favorites:'/favorites',account:'/account',popular:'/',install:'/install',admin:'/admin'};
 function parseHash(){
- let h=decodeURIComponent(location.hash.slice(1));
+ let h=decodeURIComponent(routeHash().slice(1));
  if(!h)h='/';
  if(h.startsWith('tour-'))h='/excursions/'+h.slice(5);else if(LEGACY[h])h=LEGACY[h];else if(!h.startsWith('/'))h='/';
  const [path,qs]=h.split('?');return {path,parts:path.split('/').filter(Boolean),q:Object.fromEntries(new URLSearchParams(qs||''))};
 }
 function applyQ(q){ui.q.city=String(q.city||'');ui.q.format=['group','individual'].includes(q.format)?q.format:'';ui.q.district=DMAP[q.district]?q.district:'';ui.q.date=/^\d{4}-\d\d-\d\d$/.test(q.date||'')&&fromIso(q.date)>=today0()?q.date:'';const p=Number(q.people);ui.q.people=p>=1&&p<=20?p:ui.q.people;ui.cat=CAT[q.cat]||q.cat==='short'?q.cat:'all';const b=priceBounds(),valid=v=>v!=null&&v!==''&&Number.isFinite(Number(v));ui.priceMin=valid(q.min)?Math.max(b.min,Math.min(b.max,Number(q.min))):null;ui.priceMax=valid(q.max)?Math.max(ui.priceMin??b.min,Math.min(b.max,Number(q.max))):null}
 function setNav(k){$$('[data-nav]').forEach(a=>a.toggleAttribute('aria-current',false));$$('[data-m]').forEach(a=>a.toggleAttribute('aria-current',false));if(k)$$('[data-nav="'+k+'"],[data-m="'+k+'"]').forEach(a=>a.setAttribute('aria-current','page'))}
-let current='',uxLastHash=location.hash;const uxScrollPositions=new Map();
+let current='',uxLastHash=routeHash();const uxScrollPositions=new Map();
 function route(){
- const uxPrevious=current,uxDestination=location.hash;if(uxLastHash!==uxDestination){uxScrollPositions.set(uxLastHash,scrollY);uxLastHash=uxDestination}
+ const uxPrevious=current,uxDestination=routeHash();if(uxLastHash!==uxDestination){uxScrollPositions.set(uxLastHash,scrollY);uxLastHash=uxDestination}
  closeProfileEditor();
  closePop();mapLock=null;
- if(!location.hash){const path=location.pathname.replace(/^\/|\/$/g,'');const mapped={administrator:'/admin',catalog:'/excursions',journal:'/diary',transfer:'/transfer',account:'/account',map:'/map',faq:'/'};if(path.startsWith('tour/'))history.replaceState(null,'','#/excursions/'+path.slice(5));else if(mapped[path])history.replaceState(null,'','#'+mapped[path])}const raw=location.hash.slice(1);if(raw&&!raw.startsWith('/')){const p=parseHash();const qs=raw.includes('?')?'?'+raw.split('?')[1]:'';history.replaceState(null,'','#'+p.path+qs)}
+
+ canonicalPublicURL();
  const {parts,q}=parseHash();const p0=parts[0]||'';
- if(!(p0==='excursions'&&parts[1])&&p0!=='admin')tourBackHash=location.hash||'#/';
+ if(!(p0==='excursions'&&parts[1])&&p0!=='admin')tourBackHash=routeHash()||'#/';
  const mb=$('#mbar');
  document.body.classList.toggle('is-admin',p0==='admin');
  if(!(p0==='excursions'&&parts[1])){mb.hidden=true;document.body.classList.remove('has-mbar');bk=null}
@@ -1072,7 +1113,7 @@ const localStoreSet=store.set,localStoreGet=store.get;
 store.get=function(k,d){if(serverReady&&Object.hasOwn(serverLists,k))return clone(serverLists[k]);return localStoreGet(k,d)};
 store.set=function(k,value){if(!serverReady)return localStoreSet(k,value);if(k==='user'){return !!serverIdentity}if(k==='content'){if(!serverAdmin){toast('Нет доступа к настройкам');return false}const content=normalizeMedia(clone(value));delete content.site.adminPass;const validation=validateTourSettings(content.tours);if(validation){admStatus(validation,true);toast(validation);return false}scheduleServerSave(async()=>{admStatus('Сохранение на сервере…');const data=await api('/api/content',{method:'PUT',body:JSON.stringify(serverEditor?{patch:Object.fromEntries(['tours','services','popularLimit','servicesPartnerVersion','routeStops'].filter(k=>Object.hasOwn(content,k)).map(k=>[k,content[k]])),revision:contentRevision}:{content,revision:contentRevision})});contentRevision=data.revision;admStatus('Сохранено на сервере ✓')});return true}if(['diary','reviews','bookings','transfers','questions','favs'].includes(k)){if(!serverIdentity){if(k==='favs')return localStoreSet(k,value);toast('Войдите в аккаунт, чтобы сохранить');return false}const before=serverLists[k]||[],items=normalizeMedia(clone(value)),deleted=before.filter(x=>!items.some(y=>(y.id||y.code)===(x.id||x.code))).map(x=>x.id||x.code).filter(Boolean);serverLists[k]=items;scheduleServerSave(async()=>{await api('/api/list',{method:'POST',body:JSON.stringify({kind:k,items,deleted})});if(['bookings','transfers'].includes(k))$$('.success h3').forEach(n=>n.textContent='Заявка принята');if(k!=='favs')toast('Сохранено на сервере')});return true}return localStoreSet(k,value)};
 moderateStories=function(){return false};
-const signinPath=()=>'/signin-with-chatgpt?return_to='+encodeURIComponent(location.pathname+location.hash);
+const signinPath=()=>'/signin-with-chatgpt?return_to='+encodeURIComponent(location.pathname+routeHash());
 function signinPanel(title){const owner=title==='Вход администратора';return `<div class="wrap section"><section class="panel auth"><h1>${esc(title)}</h1>${serverTestAuth.enabled?`<p class="sub">Демо «Апсуа Тур» · вход по приглашению</p><form id="testLoginForm" style="display:grid;gap:12px"><label class="field">Имя<input class="input" name="name" required minlength="2" maxlength="100" autocomplete="name"></label><label class="field">Почта<input class="input" type="email" name="email" required maxlength="254" autocomplete="email"></label><label class="field">Код приглашения<input class="input" name="code" required maxlength="100" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="AT-…"></label><p class="hint">Используйте личный код от организатора и свою почту. При повторном входе укажите ту же почту. Письмо с кодом не отправляется.</p><p class="err" id="test-login-error" role="alert"></p><button class="btn btn-sea" type="submit">Войти / зарегистрироваться</button></form>`:'<p class="sub">Приём приглашений пока закрыт.</p>'}${owner?`<a class="btn btn-ghost small" style="margin-top:16px" target="_top" href="${signinPath()}">Вход владельца</a>`:''}</section></div>`}
 
 const hostedAccountView=accountView;accountView=function(){if(!serverIdentity){app.innerHTML=signinPanel('Личный кабинет');return}hostedAccountView();if(serverAdmin){const first=adminApp?.tabs()[0]?.[0]||'dash';app.insertAdjacentHTML('afterbegin',`<div class="wrap"><a class="btn btn-sea small" href="#/admin/${first}">Панель управления</a></div>`)}else if(serverEditor)app.insertAdjacentHTML('afterbegin','<div class="wrap"><a class="btn btn-sea small" href="#/admin/tours">Панель заполнения</a></div>')};
@@ -1337,12 +1378,12 @@ document.addEventListener('click',e=>{const row=e.target.closest('[data-open-ord
 
 
 
-let adminBaseline=null,adminDirty=false,adminSaving=false,adminExitBusy=false,adminNavigationPermit=false,adminLastHash=location.hash;
+let adminBaseline=null,adminDirty=false,adminSaving=false,adminExitBusy=false,adminNavigationPermit=false,adminLastHash=routeHash();
 function updateAdminSaveState(){window.apsuaAdminDirty=adminDirty;window.apsuaAdminSaving=adminSaving;$$('[data-admin-save]').forEach(button=>{button.disabled=adminSaving||!adminDirty;button.textContent=adminSaving?'Сохранение…':'Сохранить'});const status=$('#adminDraftStatus');if(status)status.textContent=adminSaving?'Сохранение на сервере…':adminDirty?'Есть несохранённые изменения':'Все изменения сохранены';if(adminDirty)admStatus('Изменения не сохранены')}
 function stageAdminContent(){if(!adminBaseline)adminBaseline=clone(C);adminDirty=JSON.stringify(C)!==JSON.stringify(adminBaseline);updateAdminSaveState();return true}
 const storeBeforeManualSave=store.set;store.set=function(key,value){if(key==='content'&&serverReady&&serverAdmin)return stageAdminContent();return storeBeforeManualSave(key,value)};
 function resetAdminBaseline(){adminBaseline=clone(C);adminDirty=false;updateAdminSaveState()}
-window.addEventListener('hashchange',e=>{const target=location.hash;if(adminNavigationPermit||!adminDirty){adminNavigationPermit=false;adminLastHash=target;return}e.stopImmediatePropagation();history.replaceState(null,'',location.pathname+location.search+adminLastHash);adminApp?.exitDraft(()=>{adminLastHash=target;location.hash=target})},true);
+window.addEventListener('hashchange',e=>{const target=routeHash();if(adminNavigationPermit||!adminDirty){adminNavigationPermit=false;adminLastHash=target;return}e.stopImmediatePropagation();history.replaceState(null,'',location.pathname+location.search+adminLastHash);adminApp?.exitDraft(()=>{adminLastHash=target;location.hash=target})},true);
 
 function bannerPhotos(target){const item=C[target];return Array.isArray(item?.photos)?item.photos.filter(Boolean):item?.photo?[item.photo]:[]}
 // build 166: built-in banner photos also ship as WebP at several widths; the first hero photo is the page's main image.
@@ -1469,7 +1510,7 @@ let transferSending=false;
 
 
 /* User journey: recoverable drafts, honest submissions and compact controls. */
-window.addEventListener('hashchange',e=>{if(e.oldURL){const previous=new URL(e.oldURL).hash;uxScrollPositions.set(previous,scrollY);uxLastHash=previous}},true);
+window.addEventListener('hashchange',e=>{if(e.oldURL){const previous=routeHash(new URL(e.oldURL));uxScrollPositions.set(previous,scrollY);uxLastHash=previous}},true);
 const uxDraftDismissed=new Set();let bookingSending=false,uxRestoringDraft=false;
 function uxDraftKey(kind,id=''){return 'apsua-request-draft:'+String(serverIdentity?.id||'guest')+':'+kind+':'+id}
 function readRequestDraft(kind,id=''){try{const key=uxDraftKey(kind,id),entry=JSON.parse(localStorage.getItem(key)||'null');if(!entry||Date.now()-entry.at>86400000){localStorage.removeItem(key);return null}return entry.data}catch{return null}}
@@ -1737,14 +1778,14 @@ let telegramLoginSDK,telegramSigninDialog=null,telegramAuthAttempt=null,telegram
 const telegramReturnKey='apsua-telegram-return',telegramPendingKey='apsua-telegram-pending';
 function safeTelegramReturn(value){const hash=String(value||'#/');return hash.length<=600&&!/[\r\n]/.test(hash)&&/^#\/(?:$|(?:excursions|transfer|map|reviews|diary|useful|install|favorites|fleet|about|contacts|contact|compare|pick|orders)(?:[/?]|$))/.test(hash)?hash:'#/'}
 function readTelegramStorage(key){try{return JSON.parse(sessionStorage.getItem(key)||'null')}catch{return null}}
-function telegramReturnContext(){const currentHash=location.hash||'#/';if(safeTelegramReturn(currentHash)===currentHash)return {hash:currentHash,y:window.scrollY||0};const saved=readTelegramStorage(telegramReturnKey);return saved&&Date.now()-saved.at<3600000?{hash:safeTelegramReturn(saved.hash),y:Number(saved.y)||0}:{hash:'#/',y:0}}
-function rememberTelegramPage(hash=location.hash||'#/',y=window.scrollY||0){if(safeTelegramReturn(hash)!==hash)return;try{sessionStorage.setItem(telegramReturnKey,JSON.stringify({hash,y,at:Date.now()}))}catch{}}
+function telegramReturnContext(){const currentHash=routeHash()||'#/';if(safeTelegramReturn(currentHash)===currentHash)return {hash:currentHash,y:window.scrollY||0};const saved=readTelegramStorage(telegramReturnKey);return saved&&Date.now()-saved.at<3600000?{hash:safeTelegramReturn(saved.hash),y:Number(saved.y)||0}:{hash:'#/',y:0}}
+function rememberTelegramPage(hash=routeHash()||'#/',y=window.scrollY||0){if(safeTelegramReturn(hash)!==hash)return;try{sessionStorage.setItem(telegramReturnKey,JSON.stringify({hash,y,at:Date.now()}))}catch{}}
 function telegramAuthMessage(text='',pending=false){$$('[data-tg-login]').forEach(slot=>{const button=$('button',slot),status=$('.tg-app-status',slot);if(button){button.disabled=pending;button.textContent=pending?'Подтвердите вход в Telegram':'Войти через Telegram'}if(status){status.hidden=!text;status.textContent=text}})}
 function closeTelegramSignin(){if(!telegramSigninDialog)return;const dialog=telegramSigninDialog;telegramSigninDialog=null;dialog.close();dialog.remove();document.body.style.overflow=dialog._oldOverflow||''}
 function signinProviders(){const tg=serverTelegramAuth.enabled,ya=typeof serverYandexAuth!=='undefined'&&serverYandexAuth.enabled;return '<div class="signin-providers" aria-label="Способ входа">'+(tg?'<details class="signin-telegram"><summary class="signin-provider"><span class="signin-provider-mark" aria-hidden="true"><img src="/assets/auth-telegram.svg" alt="" width="18" height="18"></span><span>Войти через Telegram</span></summary><div class="signin-telegram-options" data-tg-login></div></details>':'')+(ya?'<button class="signin-provider yandex-login" type="button" data-yandex-login><span class="signin-provider-mark" aria-hidden="true"><img src="/assets/auth-yandex.svg" alt="" width="15" height="18"></span><span>Войти через Яндекс</span></button>':'')+(!tg&&!ya?'<p class="hint">Вход временно недоступен. Попробуйте позже.</p>':'')+'</div>'}
 function openTelegramSignin(){if(serverIdentity||!serverTelegramAuth.enabled){location.hash='#/account';return}rememberTelegramPage();if(telegramSigninDialog){telegramSigninDialog.focus();return}const dialog=document.createElement('dialog');dialog.className='telegram-signin-dialog';dialog.setAttribute('aria-labelledby','telegram-signin-title');dialog._oldOverflow=document.body.style.overflow;dialog.innerHTML='<header><h2 id="telegram-signin-title">Войти</h2><button type="button" class="circle receipt-close" data-close-telegram aria-label="Закрыть">'+closeReceiptIcon+'</button></header><p>Бронируйте и следите за заказами.</p>'+signinProviders();dialog.addEventListener('cancel',event=>{event.preventDefault();closeTelegramSignin()});dialog.addEventListener('click',event=>{if(event.target.closest('[data-close-telegram]'))closeTelegramSignin();else if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)closeTelegramSignin()}});document.body.append(dialog);telegramSigninDialog=dialog;document.body.style.overflow='hidden';dialog.showModal();mountTelegramLogin($('[data-tg-login]',dialog));}
 function endTelegramAttempt(error=''){clearTimeout(telegramAuthTimer);telegramAuthAttempt=null;window.apsuaAuthPending=false;try{sessionStorage.removeItem(telegramPendingKey)}catch{}telegramAuthMessage(error,false);if(error)$$('[data-tg-login]').forEach(slot=>slot._refreshTelegramWeb?.())}
-function completeTelegramSignin(data,attempt=telegramAuthAttempt){if(!data.user||data.user.authKind!=='telegram')return false;if(attempt&&telegramAuthAttempt!==attempt)return false;const back=attempt?.back||telegramReturnContext(),y=window.scrollY||0;clientAuthEpoch++;serverIdentity=data.user;serverLists.user=data.user;serverAdmin=!!data.admin;serverEditor=!!data.editor;serverStaffRole=data.staffRole||'';Object.assign(serverLists,data.lists||{},{user:data.user});myOrdersCache=null;myOrdersCacheUserId=null;favs.clear();(data.lists?.favs||[]).forEach(id=>favs.add(id));endTelegramAttempt();try{window.Telegram?.Login?.close?.()}catch{}closeTelegramSignin();renderChrome();updateCustomerOrdersBanner();if(current==='account'||/^#\/account(?:\?|$)/.test(location.hash)){const target=safeTelegramReturn(back.hash);if(location.hash===target)route();else location.hash=target;requestAnimationFrame(()=>scrollTo(0,back.y||0))}else if(['orders','reviews','diary'].includes(current)){route();requestAnimationFrame(()=>scrollTo(0,y))}toast('Вы вошли');window.dispatchEvent(new Event('telegram-signed-in'));return true}
+function completeTelegramSignin(data,attempt=telegramAuthAttempt){if(!data.user||data.user.authKind!=='telegram')return false;if(attempt&&telegramAuthAttempt!==attempt)return false;const back=attempt?.back||telegramReturnContext(),y=window.scrollY||0;clientAuthEpoch++;serverIdentity=data.user;serverLists.user=data.user;serverAdmin=!!data.admin;serverEditor=!!data.editor;serverStaffRole=data.staffRole||'';Object.assign(serverLists,data.lists||{},{user:data.user});myOrdersCache=null;myOrdersCacheUserId=null;favs.clear();(data.lists?.favs||[]).forEach(id=>favs.add(id));endTelegramAttempt();try{window.Telegram?.Login?.close?.()}catch{}closeTelegramSignin();renderChrome();updateCustomerOrdersBanner();if(current==='account'||/^#\/account(?:\?|$)/.test(routeHash())){const target=safeTelegramReturn(back.hash);if(routeHash()===target)route();else location.hash=target;requestAnimationFrame(()=>scrollTo(0,back.y||0))}else if(['orders','reviews','diary'].includes(current)){route();requestAnimationFrame(()=>scrollTo(0,y))}toast('Вы вошли');window.dispatchEvent(new Event('telegram-signed-in'));return true}
 async function recoverTelegramSignin(){
  if(telegramRecoveryBusy||document.hidden)return;
  if(!telegramAuthAttempt){const saved=readTelegramStorage(telegramPendingKey);if(!saved||saved.expires<=Date.now())return;telegramAuthAttempt={id:++telegramAuthSequence,expires:saved.expires,mode:saved.mode==='web'?'web':'oidc',back:{hash:safeTelegramReturn(saved.back?.hash),y:Number(saved.back?.y)||0}};window.apsuaAuthPending=true}
@@ -1781,8 +1822,8 @@ function mountTelegramLogin(slot=$('[data-tg-login]')){
  };prepare();
 }
 rememberTelegramPage();
-window.addEventListener('hashchange',event=>{const next=location.hash||'#/';if(/^#\/account(?:\?|$)/.test(next)&&event.oldURL){const old=new URL(event.oldURL).hash||'#/';rememberTelegramPage(old)}else rememberTelegramPage(next)},true);
-document.addEventListener('click',event=>{const link=event.target.closest('a');if(!serverIdentity&&serverTelegramAuth.enabled&&link&&/^(?:\/)?#\/account(?:\?.*)?$/.test(link.getAttribute('href')||'')){event.preventDefault();event.stopImmediatePropagation();openTelegramSignin()}},true);
+window.addEventListener('hashchange',event=>{const next=routeHash()||'#/';if(/^#\/account(?:\?|$)/.test(next)&&event.oldURL){const old=routeHash(new URL(event.oldURL))||'#/';rememberTelegramPage(old)}else rememberTelegramPage(next)},true);
+document.addEventListener('click',event=>{const link=event.target.closest('a');if(!serverIdentity&&serverTelegramAuth.enabled&&link&&/^(?:(?:\/)?#\/account|\/account)(?:\?.*)?$/.test(link.getAttribute('href')||'')){event.preventDefault();event.stopImmediatePropagation();openTelegramSignin()}},true);
 for(const name of ['focus','pageshow','site-ready'])window.addEventListener(name,recoverTelegramSignin);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)recoverTelegramSignin()});
 
@@ -2000,7 +2041,7 @@ let v17LastY=Math.round(window.scrollY||0);
 window.addEventListener('scroll',()=>{v17LastY=Math.round(window.scrollY||0);clearTimeout(v17ScrollTimer);v17ScrollTimer=setTimeout(v17SaveScroll,120)},{passive:true});
 window.addEventListener('pagehide',v17SaveScroll);
 function v17PageKey(hash){const parts=String(hash||'#/').replace(/^#\/?/,'').split('?')[0].split('/').filter(Boolean);return parts[0]==='admin'?'admin':parts.slice(0,2).join('/')}
-let v17PreviousHash=location.hash||'#/';
+let v17PreviousHash=routeHash()||'#/';
 function v17PageEnter(direction){
  if(!app||typeof app.animate!=='function')return;
  app.getAnimations?.().forEach(a=>{if(a.id==='v17-page')a.cancel()});
@@ -2011,7 +2052,7 @@ function v17PageEnter(direction){
 window.addEventListener('hashchange',()=>{
  // The router has already scrolled the new page; the last scroll position seen belongs to the previous one.
  clearTimeout(v17ScrollTimer);v17Scroll.set(String(v17Index),v17LastY);v17Session.set('apsua-scroll-positions',Object.fromEntries(v17Scroll));
- const next=location.hash||'#/',state=v17History.state||{};let traverse=false,direction=1;
+ const next=routeHash()||'#/',state=v17History.state||{};let traverse=false,direction=1;
  if(state.apsuaIndex){traverse=true;direction=Number(state.apsuaIndex)<v17Index?-1:1;v17Index=Number(state.apsuaIndex)}
  else{v17Index=++v17MaxIndex;try{v17History.replaceState({...state,apsuaIndex:v17Index},'')}catch{}v17Session.set('apsua-history-max',v17MaxIndex)}
  const samePage=v17PageKey(next)===v17PageKey(v17PreviousHash);v17PreviousHash=next;
@@ -2045,7 +2086,7 @@ function v17ApplyMenu(y){const sheet=$('.site-menu-sheet',v17Menu),scrim=$('.sit
 function v17MenuY(){const m=/translate3d\(0px?,\s*(-?[\d.]+)px/.exec($('.site-menu-sheet',v17Menu)?.style.transform||'');return m?Number(m[1]):v17SheetHeight()}
 function v17OpenMenu(){
  const menu=v17EnsureMenu();if(v17MenuOpen)return;v17MenuOpen=true;v17MenuReturn=document.activeElement;
- menu.innerHTML=v17MenuHTML();menu.hidden=false;const here=location.hash||'#/';menu.querySelectorAll('a[href]').forEach(a=>{if(a.getAttribute('href')===here)a.setAttribute('aria-current','page')});document.documentElement.classList.add('menu-open');v17MenuOverflow=document.documentElement.style.overflow;document.documentElement.style.overflow='hidden';
+ menu.innerHTML=v17MenuHTML();menu.hidden=false;const here=publicURL(routeHash())||routeHash()||'/';menu.querySelectorAll('a[href]').forEach(a=>{if(a.getAttribute('href')===here)a.setAttribute('aria-current','page')});document.documentElement.classList.add('menu-open');v17MenuOverflow=document.documentElement.style.overflow;document.documentElement.style.overflow='hidden';
  $('#menuToggle')?.setAttribute('aria-expanded','true');$('#menuToggle')?.setAttribute('aria-label','Закрыть меню');
  const start=v17SheetHeight();v17ApplyMenu(start);v17MenuSpring?.stop();
  v17MenuSpring=v17Spring({from:start,to:0,response:.38,damping:.86,apply:v17ApplyMenu});
@@ -2065,7 +2106,7 @@ document.addEventListener('click',e=>{
  if(!v17MenuOpen||!v17Menu?.contains(e.target))return;
  if(e.target.closest('[data-menu-close]')){e.preventDefault();v17CloseMenu();return}
  const link=e.target.closest('a[href]');
- if(link){const href=link.getAttribute('href');if(href===location.hash||href==='#/'&&!location.hash){e.preventDefault();v17CloseMenu();if(href==='#/faq')v17ScrollToFaq(true);else window.scrollTo({top:0,behavior:v17Reduced()?'instant':'smooth'})}else v17CloseMenu(false)}
+ if(link){const href=link.getAttribute('href');if(href===publicURL(routeHash())||href===routeHash()||href==='#/'&&!routeHash()){e.preventDefault();v17CloseMenu();if(href==='#/faq'||href==='/faq')v17ScrollToFaq(true);else window.scrollTo({top:0,behavior:v17Reduced()?'instant':'smooth'})}else v17CloseMenu(false)}
 });
 // Links that another handler takes over (e.g. sign-in opening in a dialog) still close the menu.
 window.addEventListener('click',e=>{if(v17MenuOpen&&v17Menu?.contains(e.target)&&e.target.closest?.('a[href]'))setTimeout(()=>v17CloseMenu(false),0)},true);
@@ -2250,7 +2291,7 @@ const v17HomeBefore=homeView;homeView=function(...a){
  for(const node of [pop,places,stories,steps,useful,reviews])if(node)wrap.append(node);
  wrap.insertAdjacentHTML('beforeend',v17FaqHTML());
  const frame=$('.v4-yandex-frame iframe',wrap);if(frame)frame.loading='lazy';
- if(/^#\/faq(?:[?/]|$)/.test(location.hash))requestAnimationFrame(()=>v17ScrollToFaq(false));
+ if(/^#\/faq(?:[?/]|$)/.test(routeHash()))requestAnimationFrame(()=>v17ScrollToFaq(false));
  return r;
 };
 
@@ -2317,12 +2358,12 @@ async function v17NewsPreference(){
 }
 document.addEventListener('change',async e=>{if(e.target.id!=='push-news')return;const input=e.target;input.disabled=true;try{const data=await api('/api/push/preferences',{method:'POST',body:JSON.stringify({endpoint:input._endpoint,news:input.checked})});input.checked=!!data.news;toast(data.news?'Новости включены':'Новости отключены')}catch(err){input.checked=!input.checked;toast(err.message)}finally{input.disabled=false}});
 if(typeof refreshPushDevice==='function'){const v17RefreshPushBefore=refreshPushDevice;refreshPushDevice=async function(...a){v17PushExplain();const r=await v17RefreshPushBefore.apply(this,a);v17PushExplain();if(pushDeviceEnabled)v17NewsPreference();else $('.push-news')?.remove();return r}}
-const v17AccountBefore=accountView;accountView=function(...a){const r=v17AccountBefore.apply(this,a);if(/[?&]notifications=1/.test(location.hash))requestAnimationFrame(()=>{const panel=$('.push-device');if(panel){panel.scrollIntoView({block:'center',behavior:v17Reduced()?'instant':'smooth'});panel.classList.add('is-highlighted');setTimeout(()=>panel.classList.remove('is-highlighted'),1600)}});return r};
+const v17AccountBefore=accountView;accountView=function(...a){const r=v17AccountBefore.apply(this,a);if(/[?&]notifications=1/.test(routeHash()))requestAnimationFrame(()=>{const panel=$('.push-device');if(panel){panel.scrollIntoView({block:'center',behavior:v17Reduced()?'instant':'smooth'});panel.classList.add('is-highlighted');setTimeout(()=>panel.classList.remove('is-highlighted'),1600)}});return r};
 
 
 /* ---------- 17.9: targeted mobile usability fixes ---------- */
 function syncOrdersNavState(){
- const link=$('.mnav a[href="#/orders"]'),orders=serverIdentity?myTripOrders().filter(orderIsActive):[];if(!link)return;
+ const link=$('.mnav a[href="/orders"],.mnav a[href="#/orders"]'),orders=serverIdentity?myTripOrders().filter(orderIsActive):[];if(!link)return;
  link.querySelector('.order-nav-state')?.remove();if(!orders.length)return;
  const done=orders.some(o=>['confirmed','paid'].includes(o.status)),state=document.createElement('span');state.className='order-nav-state '+(done?'is-ready':'is-waiting');state.setAttribute('aria-label',done?'Статус заказа обновлён':'Заказ ожидает ответа');state.innerHTML=done?'✓':'⌛';link.appendChild(state);
 }
@@ -2683,9 +2724,9 @@ const homeBeforeSeason=homeView;homeView=function(...a){const r=homeBeforeSeason
    ========================================================================== */
 const V152_KEEP=/^#\/(?:|excursions(?:\?[^/]*)?|favorites|diary|reviews|useful|fleet)$/,V152_KEEP_MS=600000,v152Kept=new Map();
 function v152PageSig(){let lists='';try{lists=['diary','reviews','bookings','transfers'].map(k=>Array.isArray(serverLists?.[k])?serverLists[k].length:0).join('.')}catch{}return [contentRevision,serverIdentity?.id||'',[...(favs||[])].sort().join(','),lists,typeof myOrdersCache==='object'&&myOrdersCache?myOrdersCache.length:''].join('|')}
-let v152ShownHash=typeof location==='object'?location.hash||'#/':'#/',v152ShownCurrent='',v152Traverse=false,v152KeepObserver=null;
+let v152ShownHash=typeof location==='object'?routeHash()||'#/':'#/',v152ShownCurrent='',v152Traverse=false,v152KeepObserver=null;
 // The router replaces the page; the removed page is kept as it was (with its listeners, scroll of rails and loaded photos).
-if(typeof MutationObserver!=='undefined'&&typeof app!=='undefined'&&app){v152KeepObserver=new MutationObserver(records=>{const hash=location.hash||'#/';if(hash===v152ShownHash)return;
+if(typeof MutationObserver!=='undefined'&&typeof app!=='undefined'&&app){v152KeepObserver=new MutationObserver(records=>{const hash=routeHash()||'#/';if(hash===v152ShownHash)return;
  v152Traverse=typeof history==='object'&&!!history?.state?.apsuaIndex;const first=records.find(r=>r.removedNodes.length);const old=v152ShownHash;
  if(first&&V152_KEEP.test(old)&&!document.body.classList.contains('is-admin')&&!/^#\/admin/.test(old)){v152Kept.delete(old);v152Kept.set(old,{nodes:[...first.removedNodes],y:v152LeaveY,at:Date.now(),sig:v152PageSig(),current:v152ShownCurrent});while(v152Kept.size>6)v152Kept.delete(v152Kept.keys().next().value)}});v152KeepObserver.observe(app,{childList:true})}
 let v152LeaveY=0;if(typeof window==='object')window.addEventListener('scroll',()=>{v152LeaveY=Math.round(window.scrollY||0)},{passive:true});
@@ -2693,10 +2734,10 @@ let v152LeaveY=0;if(typeof window==='object')window.addEventListener('scroll',()
 const v152Scrolled=new Set();if(typeof document==='object'&&document.addEventListener)document.addEventListener('scroll',e=>{const n=e.target;if(n&&n.nodeType===1&&app?.contains(n)){n._v152x=n.scrollLeft;n._v152y=n.scrollTop;v152Scrolled.add(n)}},{capture:true,passive:true});
 function v152RestoreInner(nodes){for(const n of [...v152Scrolled]){if(!n.isConnected){if(!nodes.some(root=>root.contains?.(n)))v152Scrolled.delete(n);continue}if(n._v152x)n.scrollLeft=n._v152x;if(n._v152y)n.scrollTop=n._v152y}}
 // Filters change the address without a page change; the kept page must be filed under the current address.
-if(typeof history==='object'&&history?.replaceState){const replaceBeforeV152=history.replaceState.bind(history);history.replaceState=function(...a){const before=location.hash,index=history.state?.apsuaIndex;if(index&&(a[0]==null||typeof a[0]==='object'&&!Array.isArray(a[0])&&!a[0].apsuaIndex))a[0]={...(a[0]||{}),apsuaIndex:index};const r=replaceBeforeV152(...a);if(a.length>2&&a[2]!=null&&before===v152ShownHash&&location.hash!==before)v152ShownHash=location.hash||'#/';return r}}
+if(typeof history==='object'&&history?.replaceState){const replaceBeforeV152=history.replaceState.bind(history);history.replaceState=function(...a){const before=routeHash(),index=history.state?.apsuaIndex;if(index&&(a[0]==null||typeof a[0]==='object'&&!Array.isArray(a[0])&&!a[0].apsuaIndex))a[0]={...(a[0]||{}),apsuaIndex:index};const r=replaceBeforeV152(...a);if(a.length>2&&a[2]!=null&&before===v152ShownHash&&routeHash()!==before)v152ShownHash=routeHash()||'#/';return r}}
 // After the router and the scroll bookkeeping: on back/forward show the kept page before anything is painted.
 let v152Restored=null;
-window.addEventListener('hashchange',()=>{const hash=location.hash||'#/',kept=v152Kept.get(hash);v152Restored=null;
+window.addEventListener('hashchange',()=>{const hash=routeHash()||'#/',kept=v152Kept.get(hash);v152Restored=null;
  const done=()=>{v152ShownHash=hash;v152ShownCurrent=current;v152LeaveY=Math.round(window.scrollY||0)};
  if(!kept){done();return}v152Kept.delete(hash);
  if(!v152Traverse||Date.now()-kept.at>V152_KEEP_MS||kept.sig!==v152PageSig()||kept.current!==current){done();return}
@@ -2704,7 +2745,7 @@ window.addEventListener('hashchange',()=>{const hash=location.hash||'#/',kept=v1
  app.getAnimations?.().forEach(a=>{if(a.id==='v17-page')a.cancel()});window.scrollTo({top:kept.y,behavior:'instant'});
  requestAnimationFrame(()=>{if(v152Restored?.hash===hash)window.scrollTo({top:kept.y,behavior:'instant'})});
  setTimeout(()=>{if(v152Restored?.hash===hash&&Math.abs((window.scrollY||0)-kept.y)>2)window.scrollTo({top:kept.y,behavior:'instant'})},200)});
-window.addEventListener('site-ready',()=>{v152ShownHash=location.hash||'#/';v152ShownCurrent=current});
+window.addEventListener('site-ready',()=>{v152ShownHash=routeHash()||'#/';v152ShownCurrent=current});
 // A tab the phone unloaded in the background reopens at the same place.
 (()=>{let nav='';try{nav=performance.getEntriesByType('navigation')[0]?.type||''}catch{}if(!(document.wasDiscarded||nav==='reload'||nav==='back_forward'))return;const y=v17Scroll.get(String(v17Index));if(!y)return;
  // Late redraws during start-up may jump to the top; hold the place until the visitor scrolls or 2 s pass.
@@ -2789,7 +2830,7 @@ document.addEventListener('submit',e=>{if(e.target.id!=='accountContactSettings'
 const bookingBeforeAccountPreferences=renderBooking;renderBooking=function(...args){const result=bookingBeforeAccountPreferences.apply(this,args);if(serverIdentity&&bk?.step==='form'&&!bk.contact?.phone){const prefs=accountContactPreferences(),phone=$('#bk-phone');if(phone&&!phone.value&&prefs.phone)phone.value=prefs.phone;if(prefs.via&&!bk.contact?.via)$$('#bkForm input[name="via"]').forEach(el=>el.checked=el.value===prefs.via)}return result};
 const transferBeforeAccountPreferences=renderTransfer;renderTransfer=function(...args){if(serverIdentity&&tr.step!=='done'&&!$('#trForm')){const prefs=accountContactPreferences();if(!tr.phone&&prefs.phone)tr.phone=prefs.phone;if(!tr.via&&prefs.via)tr.via=prefs.via}return transferBeforeAccountPreferences.apply(this,args)};
 
-document.addEventListener('click',event=>{const button=event.target.closest?.('[data-yandex-login]');if(!button)return;event.preventDefault();rememberTelegramPage();const back=safeTelegramReturn(location.hash||'#/');location.href='/api/yandex-auth/start?return_to='+encodeURIComponent(back)},true);
+document.addEventListener('click',event=>{const button=event.target.closest?.('[data-yandex-login]');if(!button)return;event.preventDefault();rememberTelegramPage();const back=safeTelegramReturn(routeHash()||'#/');location.href='/api/yandex-auth/start?return_to='+encodeURIComponent(back)},true);
 
 hostedBoot();
 })();
