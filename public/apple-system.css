@@ -425,3 +425,8 @@ html body:not(.is-admin) #app .trw-chip .trw-ico{width:16px;height:16px}
 /* computer: the form and its heading sit in one centred column */
 html body:not(.is-admin) #app .tr-layout.trw-layout{margin-inline:auto}
 html body:not(.is-admin) #app .wrap:has(.trw-layout) .page-head{max-width:720px;margin-inline:auto}
+/* 27.2 — price sheet: the title and hint live inside the sheet (a fieldset legend escaped it on iPhone) */
+html body #app .catalog-price .price-sheet-head{display:grid;gap:2px;margin:0;padding:0;color:var(--apple-ink,#1d1d1f)}
+html body #app .catalog-price .price-sheet-head b{font-size:17px;font-weight:600;letter-spacing:-.02em;line-height:22px}
+html body #app .catalog-price .price-sheet-head small{text-wrap:balance;color:var(--apple-ink-2,#6e6e73);font-size:13px;font-weight:400;line-height:18px}
+@media (max-width:640px){html body #app .catalog-price .price-sheet-head{padding-top:4px;text-align:center}html body #app .catalog-price .price-sheet-head b{font-size:19px}}
