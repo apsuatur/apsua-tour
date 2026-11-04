@@ -1228,13 +1228,16 @@ const originalPut=idb.put.bind(idb);idb.put=async function(key,value){if(!server
 const previousLoadStoryMedia=loadStoryMedia;loadStoryMedia=async function(){for(const el of $$('[data-story-media]')){const key=el.dataset.storyMedia;if(key.startsWith('/api/media/'))el.src=key;else if(mediaMapping[key])el.src=mediaMapping[key]}await previousLoadStoryMedia()};
 document.addEventListener('submit',e=>{if(['bkForm','trForm','diaForm','revForm','rvForm','questionForm','storyComment'].includes(e.target.id)&&!serverIdentity){e.preventDefault();e.stopImmediatePropagation();openTelegramSignin()}if(['admLogin','admPass','authForm'].includes(e.target.id)){e.preventDefault();e.stopImmediatePropagation();location.href=signinPath()}},true);
 document.addEventListener('click',e=>{if(e.target.closest('[data-logout]')){e.preventDefault();e.stopImmediatePropagation();if(serverIdentity?.authKind==='test'){api('/api/test-logout',{method:'POST',body:'{}'}).then(()=>location.reload()).catch(err=>toast(err.message))}else if(serverIdentity?.authKind==='yandex'){api('/api/yandex-logout',{method:'POST',body:'{}'}).then(()=>location.reload()).catch(err=>toast(err.message))}else location.href='/signout-with-chatgpt?return_to=%2F%23%2Faccount'}if(e.target.closest('[data-story-rate]')&&!serverIdentity){e.preventDefault();e.stopImmediatePropagation();toast('Войдите, чтобы поставить оценку');location.hash='#/account'}},true);
+// The page shell starts /api/state before this script loads (window.apsuaEarlyState). Use that answer when it is
+// a valid success; otherwise (old cached shell, network error, server error, timeout) ask again as before.
+async function bootState(){const early=window.apsuaEarlyState;window.apsuaEarlyState=null;if(early){try{const response=await Promise.race([early,new Promise(resolve=>setTimeout(()=>resolve(null),15000))]);if(response?.ok){const data=await response.json();if(data&&typeof data==='object'&&data.content){if(data.lastModifiedAt)updateAdminTimestamp(data.lastModifiedAt);return data}}}catch{}}return api('/api/state',{signal:AbortSignal.timeout(15000)})}
 async function hostedBoot(){
  // Local image caches must never block the first page render.
  renderChrome();
  // build 166: the shell keeps #app one screen tall until the first page renders, so the footer never jumps (see site-shell).
  app.innerHTML='<div class="wrap section" role="status"><p class="sub"></p></div>';
  try{
-  const data=await api('/api/state',{signal:AbortSignal.timeout(15000)});
+  const data=await bootState();
   window.apsuaLiveRevision=data.liveRevision;
   C=mergeDefaults(data.content,clone(DEFAULT));ensureTransferConfig();syncRouteStops();
   contentRevision=data.revision;serverIdentity=data.user;serverAdmin=data.admin;serverEditor=!!data.editor;serverStaffRole=data.staffRole||'';serverTestAuth=data.testAuth||{enabled:false,until:null};serverTelegramAuth=data.telegramAuth||{enabled:false,bot:''};serverYandexAuth=data.yandexAuth||{enabled:false};window.apsuaYandexMapsKey=typeof data.yandexMapsKey==='string'?data.yandexMapsKey:'';
