@@ -14,6 +14,7 @@ const source=read('lib/site-api.ts')
  .replace("import seed from './site-seed.json';",'const seed='+read('lib/site-seed.json')+';')
  .replace("import { telegramAuth, telegramConfig, telegramIdentity, telegramLogout, telegramAppAPI } from './telegram-auth';",read('lib/telegram-auth.ts').replace(/export /g,''))
  .replace("import { yandexAuth, yandexConfig, yandexIdentity, yandexLogout } from './yandex-auth';",read('lib/yandex-auth.ts').replace(/export /g,''))
+ .replace("import { orderCaptchaChallenge, orderCaptchaEnabled, verifyOrderCaptcha } from './order-captcha';",read('lib/order-captcha.ts').replace(/export /g,''))
  .replace("import { priceBooking } from './tour-pricing';",read('lib/tour-pricing.ts').replace(/export /g,''))
  .replace("import transferRates from './transfer-rates.json';",'const transferRates='+read('lib/transfer-rates.json')+';');
 const js=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
