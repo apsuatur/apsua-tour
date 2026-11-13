@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import ts from 'typescript';
+
+const source=readFileSync(new URL('../lib/order-captcha.ts',import.meta.url),'utf8');
+const js=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
+const {orderCaptchaEnabled,orderCaptchaChallenge,verifyOrderCaptcha}=await import('data:text/javascript;base64,'+Buffer.from(js).toString('base64'));
+const env={YANDEX_SMARTCAPTCHA_SITE_KEY:'public-site-key',YANDEX_SMARTCAPTCHA_SERVER_KEY:'private-server-key'};
+assert.equal(orderCaptchaEnabled(env),true);
+assert.equal(orderCaptchaEnabled({YANDEX_SMARTCAPTCHA_SITE_KEY:'public'}),false);
+const challenge=orderCaptchaChallenge(env);
+assert.equal(challenge.code,'CAPTCHA_REQUIRED');
+assert.equal(challenge.captcha.siteKey,'public-site-key');
+assert.equal(JSON.stringify(challenge).includes('private-server-key'),false,'server key must never reach the browser');
+assert.equal(await verifyOrderCaptcha(new Request('https://apsuatur.com/api/list'),env,'192.0.2.1'),false,'missing token is rejected without a provider call');
+
+let call;
+globalThis.fetch=async(url,options)=>{call={url:String(url),options};return Response.json({status:'ok'})};
+const request=new Request('https://apsuatur.com/api/list',{headers:{'x-apsua-captcha-token':'valid-token-with-enough-length'}});
+assert.equal(await verifyOrderCaptcha(request,env,'192.0.2.1'),true);
+assert.equal(call.url,'https://smartcaptcha.cloud.yandex.ru/validate');
+assert.equal(call.options.method,'POST');
+const posted=new URLSearchParams(call.options.body);
+assert.equal(posted.get('secret'),'private-server-key');
+assert.equal(posted.get('token'),'valid-token-with-enough-length');
+assert.equal(posted.get('ip'),'192.0.2.1');
+globalThis.fetch=async()=>Response.json({status:'failed'});
+assert.equal(await verifyOrderCaptcha(request,env,'192.0.2.1'),false,'failed provider verdict blocks the request');
+globalThis.fetch=async()=>new Response('temporary provider failure',{status:503});
+assert.equal(await verifyOrderCaptcha(request,env,'192.0.2.1'),true,'provider outage does not stop legitimate bookings');
+
+const api=readFileSync(new URL('../lib/site-api.ts',import.meta.url),'utf8');
+const app=readFileSync(new URL('../public/user-app.js',import.meta.url),'utf8');
+assert.match(api,/fresh&&\['bookings','transfers'\]\.includes\(kind\)/,'risk check is limited to new booking/transfer requests');
+assert.match(api,/owner10[\s\S]*>2[\s\S]*network10[\s\S]*>5/,'short-window risk thresholds are present');
+assert.match(api,/ownerHour[\s\S]*>30[\s\S]*networkHour[\s\S]*>50/,'hard hourly limits are present');
+assert.match(api,/request\.headers\.get\('cf-connecting-ip'\)/,'only Cloudflare trusted client IP is used');
+assert.doesNotMatch(api,/x-forwarded-for/i,'spoofable forwarded header is not trusted');
+assert.match(app,/function submitOrderRequest\(kind,payload\)/);
+assert.match(app,/error\?\.code!=='CAPTCHA_REQUIRED'/);
+assert.match(app,/smartcaptcha\.cloud\.yandex\.ru\/captcha\.js/,'captcha script is loaded lazily only after a challenge');
+assert.match(app,/invisible:true/);
+console.log('PASS: SmartCaptcha is lazy and invisible, server-validated, secret-safe, scoped to suspicious new applications, rate-limited and fail-open only for provider outages.');

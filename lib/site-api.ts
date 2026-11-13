@@ -10,7 +10,8 @@ import transferRates from './transfer-rates.json';
 import { priceBooking } from './tour-pricing';
 import { telegramAuth, telegramConfig, telegramIdentity, telegramLogout, telegramAppAPI } from './telegram-auth';
 import { yandexAuth, yandexConfig, yandexIdentity, yandexLogout } from './yandex-auth';
-type Env={PAYMENT_WEBHOOK_SECRET?:string;DISPATCH_API_URL?:string;DISPATCH_API_TOKEN?:string;DISPATCH_WEBHOOK_SECRET?:string;APP_ADMIN_INVITE?:string;VAPID_PUBLIC_KEY?:string;VAPID_PRIVATE_JWK?:string;VAPID_SUBJECT?:string;DB:D1Database;BUCKET:R2Bucket;SITE_OWNER_EMAIL?:string;SITE_OWNER_TELEGRAM_ID?:string;TEST_AUTH_INVITES?:string;DEMO_AUTH_INVITES?:string;TEST_AUTH_UNTIL?:string;TELEGRAM_BOT_TOKEN?:string;TELEGRAM_WEBHOOK_SECRET?:string;TELEGRAM_BOT_USERNAME?:string;YANDEX_MAPS_KEY?:string;YANDEX_OAUTH_CLIENT_ID?:string;YANDEX_OAUTH_CLIENT_SECRET?:string;ORS_API_KEY?:string};
+import { orderCaptchaChallenge, orderCaptchaEnabled, verifyOrderCaptcha } from './order-captcha';
+type Env={PAYMENT_WEBHOOK_SECRET?:string;DISPATCH_API_URL?:string;DISPATCH_API_TOKEN?:string;DISPATCH_WEBHOOK_SECRET?:string;APP_ADMIN_INVITE?:string;VAPID_PUBLIC_KEY?:string;VAPID_PRIVATE_JWK?:string;VAPID_SUBJECT?:string;DB:D1Database;BUCKET:R2Bucket;SITE_OWNER_EMAIL?:string;SITE_OWNER_TELEGRAM_ID?:string;TEST_AUTH_INVITES?:string;DEMO_AUTH_INVITES?:string;TEST_AUTH_UNTIL?:string;TELEGRAM_BOT_TOKEN?:string;TELEGRAM_WEBHOOK_SECRET?:string;TELEGRAM_BOT_USERNAME?:string;YANDEX_MAPS_KEY?:string;YANDEX_OAUTH_CLIENT_ID?:string;YANDEX_OAUTH_CLIENT_SECRET?:string;YANDEX_SMARTCAPTCHA_SITE_KEY?:string;YANDEX_SMARTCAPTCHA_SERVER_KEY?:string;ORS_API_KEY?:string};
 const json=(data:unknown,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const clean=(v:unknown,n=3000)=>String(v??'').trim().slice(0,n);
 const releaseUpdatedAt=1791505751266;
@@ -271,6 +272,19 @@ const lookupIds=[...new Set([...(await Promise.all(items.map((item:any)=>request
    if(kind==='diary'&&typeof data.img==='string'&&data.img.startsWith('data:image/'))return json({error:'Сначала загрузите фото отдельно, затем отправьте историю'},400);
    const encoded=JSON.stringify(data);if(encoded.length>100000)return json({error:'Слишком большой текст записи'},400);if(old&&old.body===encoded&&old.status===status)continue;if(!old){fresh++;freshKeys.push(key)}
    statements.push(env.DB.prepare('INSERT INTO records (id,kind,owner,body,status,created,updated) VALUES (?,?,?,?,?,?,?) '+(['bookings','transfers','questions'].includes(kind)?'ON CONFLICT(id) DO NOTHING':'ON CONFLICT(id) DO UPDATE SET body=excluded.body,status=excluded.status,updated=excluded.updated')).bind(key,kind,old?.owner||id,encoded,status,old?.created||Date.now(),Date.now()))
+  }
+  if(fresh&&['bookings','transfers'].includes(kind)&&!isAdmin){
+   const now=Date.now(),ip=request.headers.get('cf-connecting-ip')||'unknown',salt=await publicIdSalt(env),networkKey=await digest('order-risk|'+salt+'|'+ip);
+   const [owner10,ownerHour,network10,networkHour]=await Promise.all([
+    env.DB.prepare("SELECT COUNT(*) AS n FROM records WHERE owner=? AND kind IN ('bookings','transfers') AND created>?").bind(id,now-600000).first<any>(),
+    env.DB.prepare("SELECT COUNT(*) AS n FROM records WHERE owner=? AND kind IN ('bookings','transfers') AND created>?").bind(id,now-3600000).first<any>(),
+    env.DB.prepare("SELECT COUNT(*) AS n FROM records WHERE owner=? AND kind='order-risk-network' AND created>?").bind(networkKey,now-600000).first<any>(),
+    env.DB.prepare("SELECT COUNT(*) AS n FROM records WHERE owner=? AND kind='order-risk-network' AND created>?").bind(networkKey,now-3600000).first<any>()
+   ]);
+   if(Number(ownerHour?.n||0)+fresh>30||Number(networkHour?.n||0)+fresh>50)return json({error:'Слишком много заявок. Попробуйте позже или свяжитесь с менеджером.',code:'ORDER_RATE_LIMIT'},429);
+   const suspicious=Number(owner10?.n||0)+fresh>2||Number(network10?.n||0)+fresh>5;
+   if(suspicious&&orderCaptchaEnabled(env)&&!await verifyOrderCaptcha(request,env,ip))return json(orderCaptchaChallenge(env),403);
+   for(const key of freshKeys)statements.push(env.DB.prepare('INSERT OR IGNORE INTO records (id,kind,owner,body,status,created,updated) VALUES (?,?,?,?,?,?,?)').bind('order-risk:'+key,'order-risk-network',networkKey,'{}','private',now,now));
   }
   if(fresh){const count=await env.DB.prepare('SELECT COUNT(*) AS n FROM records WHERE owner=? AND kind=? AND created>?').bind(id,kind,Date.now()-3600000).first<any>();if(count.n+fresh>30)return json({error:'Слишком много записей. Повторите позже.'},429)}
   for(const key of deleted.slice(0,100)){const old=existing.results.find(x=>x.id===key);if(old&&old.kind===kind&&(isAdmin||old.owner===id&&!['bookings','transfers'].includes(kind)))statements.push(env.DB.prepare('DELETE FROM records WHERE id=? AND kind=?').bind(key,kind))}

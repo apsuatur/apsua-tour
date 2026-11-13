@@ -85,6 +85,14 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node tests/telegram-oidc.mjs
 
+      - name: node tests/yandex-auth.mjs
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node tests/yandex-auth.mjs
+
+      - name: node tests/order-captcha.mjs
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node tests/order-captcha.mjs
+
       - name: node tests/telegram-key-cache.mjs
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node tests/telegram-key-cache.mjs
